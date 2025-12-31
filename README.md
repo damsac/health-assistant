@@ -1,8 +1,6 @@
-# AI Health Consultant
+# Health Assistant
 
-Expo + Tamagui + Better-Auth starter with local Supabase.
-
-## Prerequisites
+## Development Prerequisites
 
 - **[Docker](https://docs.docker.com/get-docker/)** — Required for local Supabase
 
