@@ -10,35 +10,6 @@ body {
   }
 }`;
 
-const tamaguiReset = `
-html, body, #root {
-  height: 100%;
-}
-input, textarea, select {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  border: none;
-  background: transparent;
-  font-family: inherit;
-  font-size: inherit;
-  color: inherit;
-  outline: none;
-}
-input:focus, textarea:focus, select:focus {
-  outline: none;
-}
-/* Ensure inputs can receive pointer events */
-input, textarea, button, select {
-  pointer-events: auto !important;
-}
-/* Fix Tamagui Input component on web */
-[data-tamagui-web="true"] input,
-[data-tamagui-web="true"] textarea {
-  pointer-events: auto !important;
-}
-`;
-
 // This file is web-only and used to configure the root HTML for every
 // web page during static rendering.
 // The contents of this function only run in Node.js environments and
@@ -62,8 +33,6 @@ export default function Root({ children }: { children: React.ReactNode }) {
 
         {/* Using raw CSS styles as an escape-hatch to ensure the background color never flickers in dark-mode. */}
         <style dangerouslySetInnerHTML={{ __html: responsiveBackground }} />
-        {/* Tamagui CSS reset for proper web input handling */}
-        <style dangerouslySetInnerHTML={{ __html: tamaguiReset }} />
         {/* Add any additional <head> elements that you want globally available on web... */}
       </head>
       <body>{children}</body>

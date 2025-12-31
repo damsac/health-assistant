@@ -1,5 +1,7 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, router } from 'expo-router';
-import { useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { z } from 'zod';
 import {
   Button,
   Card,
@@ -12,54 +14,43 @@ import {
 } from '@/components/ui';
 import { useSignUp } from '@/lib/hooks/use-auth';
 
-type SignUpFormState = {
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  validationError: string | null;
-};
+const signUpSchema = z
+  .object({
+    name: z.string().min(1, 'Name is required'),
+    email: z.email('Please enter a valid email address'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
 
-const initialFormState: SignUpFormState = {
-  name: '',
-  email: '',
-  password: '',
-  confirmPassword: '',
-  validationError: null,
-};
+type SignUpFormData = z.infer<typeof signUpSchema>;
 
 export default function SignUpScreen() {
-  const [form, setForm] = useState<SignUpFormState>(initialFormState);
-
   const signUp = useSignUp();
 
-  const updateForm = (updates: Partial<SignUpFormState>) => {
-    setForm((prev) => ({ ...prev, ...updates }));
-  };
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SignUpFormData>({
+    resolver: zodResolver(signUpSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
+  });
 
-  const handleSignUp = async () => {
-    if (!form.name || !form.email || !form.password || !form.confirmPassword) {
-      updateForm({ validationError: 'Please fill in all fields' });
-      return;
-    }
-
-    if (form.password !== form.confirmPassword) {
-      updateForm({ validationError: 'Passwords do not match' });
-      return;
-    }
-
-    if (form.password.length < 8) {
-      updateForm({ validationError: 'Password must be at least 8 characters' });
-      return;
-    }
-
-    updateForm({ validationError: null });
-
+  const onSubmit = async (data: SignUpFormData) => {
     try {
       await signUp.mutateAsync({
-        email: form.email,
-        password: form.password,
-        name: form.name,
+        email: data.email,
+        password: data.password,
+        name: data.name,
       });
       router.replace('/(app)');
     } catch {
@@ -67,7 +58,7 @@ export default function SignUpScreen() {
     }
   };
 
-  const error = form.validationError || (signUp.error?.message ?? null);
+  const serverError = signUp.error?.message ?? null;
 
   return (
     <YStack
@@ -84,74 +75,124 @@ export default function SignUpScreen() {
             <Text>Sign up for a new account</Text>
           </YStack>
 
-          {error && (
+          {serverError && (
             <Text color="$red10" textAlign="center">
-              {error}
+              {serverError}
             </Text>
           )}
 
           <YStack gap="$3">
             <YStack gap="$2">
               <Text>Name</Text>
-              <Input
-                placeholder="Enter your name"
-                value={form.name}
-                onChange={(e) =>
-                  updateForm({ name: (e.target as HTMLInputElement).value })
-                }
-                autoCapitalize="words"
-                autoComplete="name"
-                disabled={signUp.isPending}
+              <Controller
+                control={control}
+                name="name"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    placeholder="Enter your name"
+                    value={value}
+                    onChangeText={onChange}
+                    onChange={(e) =>
+                      onChange((e.target as HTMLInputElement).value)
+                    }
+                    onBlur={onBlur}
+                    autoCapitalize="words"
+                    autoComplete="name"
+                    disabled={signUp.isPending}
+                  />
+                )}
               />
+              {errors.name && (
+                <Text color="$red10" fontSize="$2">
+                  {errors.name.message}
+                </Text>
+              )}
             </YStack>
 
             <YStack gap="$2">
               <Text>Email</Text>
-              <Input
-                placeholder="Enter your email"
-                value={form.email}
-                onChange={(e) =>
-                  updateForm({ email: (e.target as HTMLInputElement).value })
-                }
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                disabled={signUp.isPending}
+              <Controller
+                control={control}
+                name="email"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    placeholder="Enter your email"
+                    value={value}
+                    onChangeText={onChange}
+                    onChange={(e) =>
+                      onChange((e.target as HTMLInputElement).value)
+                    }
+                    onBlur={onBlur}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    disabled={signUp.isPending}
+                  />
+                )}
               />
+              {errors.email && (
+                <Text color="$red10" fontSize="$2">
+                  {errors.email.message}
+                </Text>
+              )}
             </YStack>
 
             <YStack gap="$2">
               <Text>Password</Text>
-              <Input
-                placeholder="Enter your password"
-                value={form.password}
-                onChange={(e) =>
-                  updateForm({ password: (e.target as HTMLInputElement).value })
-                }
-                secureTextEntry
-                autoComplete="new-password"
-                disabled={signUp.isPending}
+              <Controller
+                control={control}
+                name="password"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    placeholder="Enter your password"
+                    value={value}
+                    onChangeText={onChange}
+                    onChange={(e) =>
+                      onChange((e.target as HTMLInputElement).value)
+                    }
+                    onBlur={onBlur}
+                    secureTextEntry
+                    autoComplete="new-password"
+                    disabled={signUp.isPending}
+                  />
+                )}
               />
+              {errors.password && (
+                <Text color="$red10" fontSize="$2">
+                  {errors.password.message}
+                </Text>
+              )}
             </YStack>
 
             <YStack gap="$2">
               <Text>Confirm Password</Text>
-              <Input
-                placeholder="Confirm your password"
-                value={form.confirmPassword}
-                onChange={(e) =>
-                  updateForm({
-                    confirmPassword: (e.target as HTMLInputElement).value,
-                  })
-                }
-                secureTextEntry
-                autoComplete="new-password"
-                disabled={signUp.isPending}
+              <Controller
+                control={control}
+                name="confirmPassword"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    placeholder="Confirm your password"
+                    value={value}
+                    onChangeText={onChange}
+                    onChange={(e) =>
+                      onChange((e.target as HTMLInputElement).value)
+                    }
+                    onBlur={onBlur}
+                    secureTextEntry
+                    autoComplete="new-password"
+                    disabled={signUp.isPending}
+                  />
+                )}
               />
+              {errors.confirmPassword && (
+                <Text color="$red10" fontSize="$2">
+                  {errors.confirmPassword.message}
+                </Text>
+              )}
             </YStack>
           </YStack>
 
-          <Button onPress={handleSignUp} disabled={signUp.isPending}>
+          <Button onPress={handleSubmit(onSubmit)} disabled={signUp.isPending}>
             {signUp.isPending ? (
               <XStack gap="$2" alignItems="center">
                 <Spinner size="small" />

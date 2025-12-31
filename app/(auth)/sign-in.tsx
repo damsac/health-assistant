@@ -1,5 +1,7 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, router } from 'expo-router';
-import { useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { z } from 'zod';
 import {
   Button,
   Card,
@@ -12,44 +14,38 @@ import {
 } from '@/components/ui';
 import { useSignIn } from '@/lib/hooks/use-auth';
 
-type SignInFormState = {
-  email: string;
-  password: string;
-  validationError: string | null;
-};
+const signInSchema = z.object({
+  email: z.email('Please enter a valid email address'),
+  password: z.string().min(1, 'Password is required'),
+});
 
-const initialFormState: SignInFormState = {
-  email: '',
-  password: '',
-  validationError: null,
-};
+type SignInFormData = z.infer<typeof signInSchema>;
 
 export default function SignInScreen() {
-  const [form, setForm] = useState<SignInFormState>(initialFormState);
-
   const signIn = useSignIn();
 
-  const updateForm = (updates: Partial<SignInFormState>) => {
-    setForm((prev) => ({ ...prev, ...updates }));
-  };
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SignInFormData>({
+    resolver: zodResolver(signInSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
-  const handleSignIn = async () => {
-    if (!form.email || !form.password) {
-      updateForm({ validationError: 'Please fill in all fields' });
-      return;
-    }
-
-    updateForm({ validationError: null });
-
+  const onSubmit = async (data: SignInFormData) => {
     try {
-      await signIn.mutateAsync({ email: form.email, password: form.password });
+      await signIn.mutateAsync({ email: data.email, password: data.password });
       router.replace('/(app)');
     } catch {
       // Error is handled by mutation state
     }
   };
 
-  const error = form.validationError || (signIn.error?.message ?? null);
+  const serverError = signIn.error?.message ?? null;
 
   return (
     <YStack
@@ -66,44 +62,70 @@ export default function SignInScreen() {
             <Text>Sign in to your account</Text>
           </YStack>
 
-          {error && (
+          {serverError && (
             <Text color="$red10" textAlign="center">
-              {error}
+              {serverError}
             </Text>
           )}
 
           <YStack gap="$3">
             <YStack gap="$2">
               <Text>Email</Text>
-              <Input
-                placeholder="Enter your email"
-                value={form.email}
-                onChange={(e) =>
-                  updateForm({ email: (e.target as HTMLInputElement).value })
-                }
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                disabled={signIn.isPending}
+              <Controller
+                control={control}
+                name="email"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    placeholder="Enter your email"
+                    value={value}
+                    onChangeText={onChange}
+                    onChange={(e) =>
+                      onChange((e.target as HTMLInputElement).value)
+                    }
+                    onBlur={onBlur}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    disabled={signIn.isPending}
+                  />
+                )}
               />
+              {errors.email && (
+                <Text color="$red10" fontSize="$2">
+                  {errors.email.message}
+                </Text>
+              )}
             </YStack>
 
             <YStack gap="$2">
               <Text>Password</Text>
-              <Input
-                placeholder="Enter your password"
-                value={form.password}
-                onChange={(e) =>
-                  updateForm({ password: (e.target as HTMLInputElement).value })
-                }
-                secureTextEntry
-                autoComplete="password"
-                disabled={signIn.isPending}
+              <Controller
+                control={control}
+                name="password"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    placeholder="Enter your password"
+                    value={value}
+                    onChangeText={onChange}
+                    onChange={(e) =>
+                      onChange((e.target as HTMLInputElement).value)
+                    }
+                    onBlur={onBlur}
+                    secureTextEntry
+                    autoComplete="password"
+                    disabled={signIn.isPending}
+                  />
+                )}
               />
+              {errors.password && (
+                <Text color="$red10" fontSize="$2">
+                  {errors.password.message}
+                </Text>
+              )}
             </YStack>
           </YStack>
 
-          <Button onPress={handleSignIn} disabled={signIn.isPending}>
+          <Button onPress={handleSubmit(onSubmit)} disabled={signIn.isPending}>
             {signIn.isPending ? (
               <XStack gap="$2" alignItems="center">
                 <Spinner size="small" />
