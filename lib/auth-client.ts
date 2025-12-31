@@ -6,29 +6,17 @@ const getBaseUrl = () => {
     return window.location.origin;
   }
   // For server-side
-  return process.env.BETTER_AUTH_URL || 'http://localhost:8081';
+  if (!process.env.BETTER_AUTH_URL) {
+    throw new Error('BETTER_AUTH_URL environment variable is not set');
+  }
+  return process.env.BETTER_AUTH_URL;
 };
 
 export const authClient = createAuthClient({
   baseURL: getBaseUrl(),
 });
 
-export const { signIn, signUp, signOut, useSession, getSession } = authClient;
-
-// Export types for auth state
-export type Session = {
-  id: string;
-  userId: string;
-  token: string;
-  expiresAt: Date;
-};
-
-export type User = {
-  id: string;
-  name: string;
-  email: string;
-  emailVerified: boolean;
-  image?: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
+// Infer types from the auth client - single source of truth
+type AuthClientSession = typeof authClient.$Infer.Session;
+export type Session = AuthClientSession['session'];
+export type User = AuthClientSession['user'];

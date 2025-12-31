@@ -16,20 +16,13 @@ async function fetchSession(): Promise<AuthSession | null> {
     throw new Error(error.message);
   }
 
-  if (!data?.user) {
+  if (!data?.user || !data?.session) {
     return null;
   }
 
-  const session: Session = {
-    id: data.user.id,
-    userId: data.user.id,
-    token: '',
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  };
-
   return {
-    user: data.user as User,
-    session,
+    user: data.user,
+    session: data.session,
   };
 }
 
@@ -101,21 +94,11 @@ export function useSignIn() {
         throw new Error('Sign in failed');
       }
 
-      const session: Session = {
-        id: data.user.id,
-        userId: data.user.id,
-        token: data.token || '',
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      };
-
-      return {
-        user: data.user as User,
-        session,
-      };
+      return { user: data.user };
     },
-    onSuccess: (data) => {
-      // Update the session cache with the new data
-      queryClient.setQueryData(queryKeys.auth.session, data);
+    onSuccess: () => {
+      // Invalidate to fetch the full session from server
+      queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
     },
   });
 }
@@ -142,20 +125,11 @@ export function useSignUp() {
         throw new Error('Sign up failed');
       }
 
-      const session: Session = {
-        id: data.user.id,
-        userId: data.user.id,
-        token: data.token || '',
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      };
-
-      return {
-        user: data.user as User,
-        session,
-      };
+      return { user: data.user };
     },
-    onSuccess: (data) => {
-      queryClient.setQueryData(queryKeys.auth.session, data);
+    onSuccess: () => {
+      // Invalidate to fetch the full session from server
+      queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
     },
   });
 }

@@ -3,7 +3,13 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { db } from './db';
 import * as schema from './db/schema';
 
+const secret = process.env.BETTER_AUTH_SECRET;
+if (!secret) {
+  throw new Error('BETTER_AUTH_SECRET environment variable is not set');
+}
+
 export const auth = betterAuth({
+  secret,
   database: drizzleAdapter(db, {
     provider: 'pg',
     schema: {
@@ -31,6 +37,3 @@ export const auth = betterAuth({
     'http://localhost:19006',
   ],
 });
-
-export type Session = typeof auth.$Infer.Session;
-export type User = typeof auth.$Infer.Session.user;

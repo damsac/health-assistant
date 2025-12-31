@@ -1,6 +1,5 @@
 // Re-export Tamagui components directly - no custom styling
 
-export type { ButtonProps, CardProps } from 'tamagui';
 export {
   Button,
   Card,
