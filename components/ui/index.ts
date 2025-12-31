@@ -6,9 +6,12 @@ export {
   Card,
   H1,
   H2,
-  Input,
   Spinner,
   Text,
   XStack,
   YStack,
 } from 'tamagui';
+
+// TODO: we added this because the input component in Tamagui
+// requires onChangeText and onChange props, but we want to just one one. I think Tamgui should handle this
+export { Input, type InputProps } from './Input';

@@ -92,9 +92,6 @@ export default function SignUpScreen() {
                     placeholder="Enter your name"
                     value={value}
                     onChangeText={onChange}
-                    onChange={(e) =>
-                      onChange((e.target as HTMLInputElement).value)
-                    }
                     onBlur={onBlur}
                     autoCapitalize="words"
                     autoComplete="name"
@@ -119,9 +116,6 @@ export default function SignUpScreen() {
                     placeholder="Enter your email"
                     value={value}
                     onChangeText={onChange}
-                    onChange={(e) =>
-                      onChange((e.target as HTMLInputElement).value)
-                    }
                     onBlur={onBlur}
                     keyboardType="email-address"
                     autoCapitalize="none"
@@ -147,9 +141,6 @@ export default function SignUpScreen() {
                     placeholder="Enter your password"
                     value={value}
                     onChangeText={onChange}
-                    onChange={(e) =>
-                      onChange((e.target as HTMLInputElement).value)
-                    }
                     onBlur={onBlur}
                     secureTextEntry
                     autoComplete="new-password"
@@ -174,9 +165,6 @@ export default function SignUpScreen() {
                     placeholder="Confirm your password"
                     value={value}
                     onChangeText={onChange}
-                    onChange={(e) =>
-                      onChange((e.target as HTMLInputElement).value)
-                    }
                     onBlur={onBlur}
                     secureTextEntry
                     autoComplete="new-password"
