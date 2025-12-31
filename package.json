@@ -7,11 +7,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "dev": "concurrently \"bun run db:start\" \"expo start\"",
-    "dev:web": "concurrently \"bun run db:start\" \"expo start --web\"",
-    "db:start": "supabase start",
-    "db:stop": "supabase stop",
-    "db:reset": "supabase db reset",
+    "dev": "expo start",
+    "dev:web": "expo start --web",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "lint": "biome lint .",
@@ -56,6 +53,10 @@
     "lint-staged": "^16.2.7",
     "supabase": "^2.23.4",
     "typescript": "~5.9.2"
+  },
+  "engines": {
+    "bun": "1.3.5",
+    "node": "24.x"
   },
   "private": true,
   "lint-staged": {

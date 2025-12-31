@@ -47,20 +47,44 @@ bun install
 cp .env.example .env.local
 ```
 
-### 5. Start Development
+### 5. Start Supabase
+
+Start the Supabase local stack before running the app:
+
+```sh
+bun run supabase start
+```
+
+### 6. Start Development
 
 ```bash
 bun run dev
 ```
 
-This starts both Supabase and Expo. Press `w` to open in web browser.
+Press `w` to open in web browser.
 
 ## Local URLs
 
 | Service | URL |
 |---------|-----|
 | Expo Web | http://localhost:8081 |
-| Supabase Studio | http://127.0.0.1:54323 |
+| Supabase Studio | http://127.0.0.1:54333 |
+
+## Database
+
+Uses [Drizzle ORM](https://orm.drizzle.team/) with PostgreSQL (Supabase).
+
+| File/Folder | Purpose |
+|-------------|---------|
+| `lib/db/schema.ts` | Table definitions |
+| `lib/db/index.ts` | Database client |
+| `supabase/migrations/` | Generated SQL migrations |
+
+### Adding/Modifying Tables
+
+1. Edit `lib/db/schema.ts`
+2. Run `bun run db:generate` — creates a migration file from schema changes
+3. Run `bun run db:migrate` — applies pending migrations to the database (requires Supabase running)
 
 ## Tech Stack
 
