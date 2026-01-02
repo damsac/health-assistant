@@ -8,7 +8,7 @@ export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
 
   const handleSuccess = () => {
-    router.replace('/');
+    router.replace('/(app)');
   };
 
   return (

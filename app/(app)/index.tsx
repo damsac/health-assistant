@@ -73,6 +73,12 @@ export default function HomeScreen() {
         </YStack>
 
         <YStack gap="$2">
+          <Button onPress={() => router.push('/(app)/chat')}>
+            Health Chat
+          </Button>
+        </YStack>
+
+        <YStack gap="$2">
           <H2>Profile</H2>
           {profile ? (
             <YStack gap="$1">

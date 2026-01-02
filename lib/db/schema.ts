@@ -103,3 +103,37 @@ export const userProfile = pgTable(
   },
   (table) => [index('idx_user_profile_user_id').on(table.userId)],
 );
+
+// Chat conversation - stores chat sessions
+export const conversation = pgTable(
+  'conversation',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    title: text('title'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [index('idx_conversation_user_id').on(table.userId)],
+);
+
+// Chat message roles
+export const messageRoleEnum = ['user', 'assistant', 'system'] as const;
+export type MessageRole = (typeof messageRoleEnum)[number];
+
+// Chat message - stores individual messages with AI SDK UIMessage format
+export const message = pgTable(
+  'message',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    conversationId: uuid('conversation_id')
+      .notNull()
+      .references(() => conversation.id, { onDelete: 'cascade' }),
+    role: text('role').notNull().$type<MessageRole>(),
+    parts: text('parts').notNull(), // JSON stringified array of parts
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [index('idx_message_conversation_id').on(table.conversationId)],
+);
