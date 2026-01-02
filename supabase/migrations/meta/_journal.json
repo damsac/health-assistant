@@ -8,6 +8,13 @@
       "when": 1767157017696,
       "tag": "0000_thin_wolfsbane",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1767323270819,
+      "tag": "0001_secret_wither",
+      "breakpoints": true
     }
   ]
 }

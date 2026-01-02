@@ -1,4 +1,12 @@
-import { boolean, index, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  index,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
@@ -66,4 +74,32 @@ export const verification = pgTable(
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => [index('idx_verification_identifier').on(table.identifier)],
+);
+
+export const genderEnum = [
+  'male',
+  'female',
+  'other',
+  'prefer_not_to_say',
+] as const;
+export type Gender = (typeof genderEnum)[number];
+
+export const userProfile = pgTable(
+  'user_profile',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: text('user_id')
+      .notNull()
+      .unique()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    heightCm: integer('height_cm'),
+    weightGrams: integer('weight_grams'),
+    gender: text('gender').$type<Gender>(),
+    dietaryPreferences: text('dietary_preferences').array(),
+    dateOfBirth: timestamp('date_of_birth'),
+    measurementSystem: text('measurement_system').default('metric'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [index('idx_user_profile_user_id').on(table.userId)],
 );

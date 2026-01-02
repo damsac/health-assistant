@@ -26,4 +26,7 @@ export const queryKeys = {
   auth: {
     session: ['auth', 'session'] as const,
   },
+  profile: {
+    detail: ['profile'] as const,
+  },
 } as const;
