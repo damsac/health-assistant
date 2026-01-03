@@ -30,13 +30,14 @@ function ProfileAwareStack() {
   }
 
   if (profile && isOnOnboarding) {
-    return <Redirect href="/" />;
+    return <Redirect href="/(app)" />;
   }
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="onboarding" />
+      <Stack.Screen name="chat" />
     </Stack>
   );
 }

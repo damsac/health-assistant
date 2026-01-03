@@ -29,4 +29,10 @@ export const queryKeys = {
   profile: {
     detail: ['profile'] as const,
   },
+  conversations: {
+    all: ['conversations'] as const,
+    list: () => [...queryKeys.conversations.all, 'list'] as const,
+    detail: (id: string) =>
+      [...queryKeys.conversations.all, 'detail', id] as const,
+  },
 } as const;
