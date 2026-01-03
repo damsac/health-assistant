@@ -1,6 +1,6 @@
 import { type UIMessage, useChat as useAIChat } from '@ai-sdk/react';
 import { useQueryClient } from '@tanstack/react-query';
-import { TextStreamChatTransport } from 'ai';
+import { DefaultChatTransport } from 'ai';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   type ConversationListResponse,
@@ -9,6 +9,7 @@ import {
 import { config } from '../config';
 import { queryKeys } from '../query-client';
 import { fetchConversations, useConversation } from './use-conversations';
+import { useCostTracking } from './use-cost-tracking';
 
 type UseChatOptions = {
   /**
@@ -42,6 +43,8 @@ export function useChat(options: UseChatOptions = {}) {
     existingConversationId ?? 'new',
   );
 
+  const costTracking = useCostTracking();
+
   // Only fetch from DB for existing conversations (not ones we just created)
   const shouldFetchFromDb =
     existingConversationId &&
@@ -60,7 +63,7 @@ export function useChat(options: UseChatOptions = {}) {
 
   const transport = useMemo(
     () =>
-      new TextStreamChatTransport({
+      new DefaultChatTransport({
         api: `${config.agent.url}/chat`,
         credentials: 'include',
         body: () => ({
@@ -73,7 +76,11 @@ export function useChat(options: UseChatOptions = {}) {
   const chat = useAIChat({
     id: chatInstanceId,
     transport,
-    onFinish: async () => {
+    onData: costTracking.handleCostData,
+    onFinish: async ({ message }) => {
+      // Track the message ID for cost association
+      costTracking.currentMessageIdRef.current = message.id;
+
       // New chat: detect server-assigned conversation ID
       if (!getEffectiveId()) {
         const conversations =
@@ -130,11 +137,17 @@ export function useChat(options: UseChatOptions = {}) {
     )
       return;
 
-    // Switching to different conversation - reset chat state
+    // Switching to different conversation - reset chat state and costs
     createdInSessionRef.current = null;
     setChatInstanceId(existingConversationId ?? 'new');
     chat.setMessages([]);
-  }, [existingConversationId, chatInstanceId, chat.setMessages]);
+    costTracking.reset();
+  }, [
+    existingConversationId,
+    chatInstanceId,
+    chat.setMessages,
+    costTracking.reset,
+  ]);
 
   return {
     ...chat,
@@ -142,5 +155,6 @@ export function useChat(options: UseChatOptions = {}) {
     isLoadingConversation: isLoading,
     conversationTitle: conversation?.title ?? null,
     getMessageText: getTextFromParts,
+    ...costTracking,
   };
 }

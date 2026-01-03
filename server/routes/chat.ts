@@ -1,4 +1,10 @@
-import { convertToModelMessages, streamText, type UIMessage } from 'ai';
+import {
+  convertToModelMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  streamText,
+  type UIMessage,
+} from 'ai';
 import { eq } from 'drizzle-orm';
 import { Hono } from 'hono';
 import {
@@ -14,6 +20,7 @@ import {
 } from '../agents/health-consultant';
 import { type AuthEnv, authMiddleware } from '../middleware/auth';
 import { conversationService } from '../services/conversation';
+import { writeCostEstimate } from '../utils/stream-cost';
 
 type ChatRequest = {
   conversationId?: string;
@@ -151,11 +158,15 @@ chat.post('/', async (c) => {
     },
   });
 
-  // Include conversationId in response headers for client to track
-  const response = result.toTextStreamResponse();
-  response.headers.set('X-Conversation-Id', conversationId);
+  // Create UI message stream that includes usage data
+  const stream = createUIMessageStream({
+    execute: async ({ writer }) => {
+      writer.merge(result.toUIMessageStream());
+      await writeCostEstimate(writer, result, conversationId);
+    },
+  });
 
-  return response;
+  return createUIMessageStreamResponse({ stream });
 });
 
 /**

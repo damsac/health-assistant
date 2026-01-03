@@ -315,6 +315,8 @@ export default function ChatScreen() {
     conversationTitle,
     getMessageText,
     setMessages,
+    totalSessionCost,
+    formatCost,
   } = useChat({
     existingConversationId: activeConversationId,
     onConversationCreated: (newId) => {
@@ -400,6 +402,13 @@ export default function ChatScreen() {
             <Text fontSize="$4" fontWeight="500" numberOfLines={1}>
               {title}
             </Text>
+            {totalSessionCost.totalCost > 0 && (
+              <Text fontSize="$1" color="$color9">
+                Est. cost: {formatCost(totalSessionCost.totalCost)} •{' '}
+                {totalSessionCost.tokenUsage.totalTokens.toLocaleString()}{' '}
+                tokens
+              </Text>
+            )}
           </YStack>
           <Pressable onPress={handleNewChat} hitSlop={8}>
             <Text color="$blue10" fontSize="$3">

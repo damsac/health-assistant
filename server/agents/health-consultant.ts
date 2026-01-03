@@ -1,5 +1,5 @@
-import { anthropic } from '@ai-sdk/anthropic';
 import type { Gender } from '@/lib/db/schema';
+import { model } from '../config/model';
 
 /**
  * Health Consultant Agent Configuration
@@ -80,7 +80,7 @@ const formatProfileContext = (context: UserProfileContext): string => {
 };
 
 export const healthConsultantAgent = {
-  model: anthropic('claude-3-haiku-20240307'),
+  model,
 
   /**
    * Generate system prompt with user context
