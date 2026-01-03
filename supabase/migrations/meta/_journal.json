@@ -22,6 +22,13 @@
       "when": 1767380329246,
       "tag": "0002_workable_lilandra",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1767483317998,
+      "tag": "0003_fluffy_barracuda",
+      "breakpoints": true
     }
   ]
 }

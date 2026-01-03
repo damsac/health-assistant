@@ -137,3 +137,48 @@ export const message = pgTable(
   },
   (table) => [index('idx_message_conversation_id').on(table.conversationId)],
 );
+
+// Garmin connection - stores user's Garmin Connect credentials and sync status
+export const garminConnection = pgTable(
+  'garmin_connection',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: text('user_id')
+      .notNull()
+      .unique()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    garminEmail: text('garmin_email').notNull(),
+    isActive: boolean('is_active').notNull().default(true),
+    lastSyncAt: timestamp('last_sync_at'),
+    lastSyncStatus: text('last_sync_status'),
+    lastSyncError: text('last_sync_error'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [index('idx_garmin_connection_user_id').on(table.userId)],
+);
+
+// Health metrics from Garmin - stores all health data points
+export const healthMetric = pgTable(
+  'health_metric',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    metricType: text('metric_type').notNull(),
+    value: text('value').notNull(),
+    unit: text('unit'),
+    recordedAt: timestamp('recorded_at').notNull(),
+    metadata: text('metadata'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_health_metric_user_id').on(table.userId),
+    index('idx_health_metric_type_date').on(
+      table.userId,
+      table.metricType,
+      table.recordedAt,
+    ),
+  ],
+);

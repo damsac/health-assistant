@@ -26,6 +26,7 @@ app.get('/health', (c) => c.json({ status: 'ok' }));
 
 // Routes
 app.route('/chat', chatRoute);
+app.route('/garmin', garminRoute);
 
 const port = 4000;
 
