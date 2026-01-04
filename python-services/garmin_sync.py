@@ -166,8 +166,6 @@ class GarminSync:
             cursor.execute("""
                 INSERT INTO health_metric (user_id, metric_type, value, unit, recorded_at, metadata)
                 VALUES (%s, %s, %s, %s, %s, %s)
-                ON CONFLICT (user_id, metric_type, recorded_at) DO UPDATE
-                SET value = EXCLUDED.value, metadata = EXCLUDED.metadata, created_at = NOW()
             """, (self.user_id, metric_type, value_str, unit, recorded_at, metadata))
             
             self.db_conn.commit()
