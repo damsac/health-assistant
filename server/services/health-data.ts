@@ -1,4 +1,4 @@
-import { desc, eq, sql } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { db, healthMetric } from '../../lib/db';
 
 export type HealthDataSummary = {
@@ -100,14 +100,14 @@ export async function getHealthDataForDays(
 
   // Group by date
   const dateMap = new Map<string, Map<string, string>>();
-  
+
   for (const metric of metrics) {
     const dateKey = metric.recordedAt.toISOString().split('T')[0];
     if (!dateMap.has(dateKey)) {
       dateMap.set(dateKey, new Map());
     }
-    const dayMetrics = dateMap.get(dateKey)!;
-    if (!dayMetrics.has(metric.metricType)) {
+    const dayMetrics = dateMap.get(dateKey);
+    if (dayMetrics && !dayMetrics.has(metric.metricType)) {
       dayMetrics.set(metric.metricType, metric.value);
     }
   }
@@ -115,7 +115,7 @@ export async function getHealthDataForDays(
   // Convert to array of summaries
   const summaries: HealthDataSummary[] = [];
   for (const [dateStr, metricMap] of dateMap.entries()) {
-    const parseFloat = (value: string | undefined): number | undefined => {
+    const parseValue = (value: string | undefined): number | undefined => {
       if (!value) return undefined;
       const parsed = Number.parseFloat(value);
       return Number.isNaN(parsed) ? undefined : parsed;
@@ -123,20 +123,20 @@ export async function getHealthDataForDays(
 
     summaries.push({
       latestDate: new Date(dateStr),
-      steps: parseFloat(metricMap.get('steps')),
-      calories: parseFloat(metricMap.get('calories')),
-      distance: parseFloat(metricMap.get('distance')),
-      restingHeartRate: parseFloat(metricMap.get('resting_heart_rate')),
-      maxHeartRate: parseFloat(metricMap.get('max_heart_rate')),
-      minHeartRate: parseFloat(metricMap.get('min_heart_rate')),
-      sleepDuration: parseFloat(metricMap.get('sleep_duration')),
-      deepSleep: parseFloat(metricMap.get('deep_sleep')),
-      lightSleep: parseFloat(metricMap.get('light_sleep')),
-      remSleep: parseFloat(metricMap.get('rem_sleep')),
-      activeMinutes: parseFloat(metricMap.get('active_minutes')),
-      vigorousMinutes: parseFloat(metricMap.get('vigorous_minutes')),
-      stressAvg: parseFloat(metricMap.get('stress_avg')),
-      stressMax: parseFloat(metricMap.get('stress_max')),
+      steps: parseValue(metricMap.get('steps')),
+      calories: parseValue(metricMap.get('calories')),
+      distance: parseValue(metricMap.get('distance')),
+      restingHeartRate: parseValue(metricMap.get('resting_heart_rate')),
+      maxHeartRate: parseValue(metricMap.get('max_heart_rate')),
+      minHeartRate: parseValue(metricMap.get('min_heart_rate')),
+      sleepDuration: parseValue(metricMap.get('sleep_duration')),
+      deepSleep: parseValue(metricMap.get('deep_sleep')),
+      lightSleep: parseValue(metricMap.get('light_sleep')),
+      remSleep: parseValue(metricMap.get('rem_sleep')),
+      activeMinutes: parseValue(metricMap.get('active_minutes')),
+      vigorousMinutes: parseValue(metricMap.get('vigorous_minutes')),
+      stressAvg: parseValue(metricMap.get('stress_avg')),
+      stressMax: parseValue(metricMap.get('stress_max')),
     });
   }
 
