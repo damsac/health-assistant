@@ -1,8 +1,8 @@
-import { Hono } from 'hono';
 import { exec } from 'child_process';
+import { and, desc, eq, gte, sql } from 'drizzle-orm';
+import { Hono } from 'hono';
 import { promisify } from 'util';
 import { db, garminConnection, healthMetric } from '@/lib/db';
-import { eq, and, gte, desc, sql } from 'drizzle-orm';
 import { type AuthEnv, authMiddleware } from '../middleware/auth';
 
 const execAsync = promisify(exec);
@@ -58,7 +58,10 @@ garmin.post('/connect', async (c) => {
           .where(eq(garminConnection.userId, session.user.id));
       })
       .catch(async (error) => {
-        console.error(`✗ Garmin sync failed for user ${session.user.id}:`, error);
+        console.error(
+          `✗ Garmin sync failed for user ${session.user.id}:`,
+          error,
+        );
         await db
           .update(garminConnection)
           .set({
@@ -71,7 +74,8 @@ garmin.post('/connect', async (c) => {
 
     return c.json({
       success: true,
-      message: 'Garmin connected successfully. Initial sync started in background.',
+      message:
+        'Garmin connected successfully. Initial sync started in background.',
     });
   } catch (error) {
     console.error('Error connecting Garmin:', error);
@@ -194,7 +198,7 @@ garmin.get('/metrics/latest', async (c) => {
       }
       return acc;
     },
-    {} as Record<string, typeof latestMetrics[0]>,
+    {} as Record<string, (typeof latestMetrics)[0]>,
   );
 
   return c.json(Object.values(grouped));

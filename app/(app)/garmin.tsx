@@ -39,13 +39,18 @@ export default function GarminPage() {
     }
 
     try {
-      await connectMutation.mutateAsync({ garminEmail: email, garminPassword: password });
+      await connectMutation.mutateAsync({
+        garminEmail: email,
+        garminPassword: password,
+      });
       setEmail('');
       setPassword('');
       setShowForm(false);
       alert('Garmin connected successfully! Data sync started in background.');
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to connect Garmin');
+      alert(
+        error instanceof Error ? error.message : 'Failed to connect Garmin',
+      );
     }
   };
 
@@ -109,7 +114,9 @@ export default function GarminPage() {
                   onPress={handleDisconnect}
                   disabled={disconnectMutation.isPending}
                 >
-                  {disconnectMutation.isPending ? 'Disconnecting...' : 'Disconnect'}
+                  {disconnectMutation.isPending
+                    ? 'Disconnecting...'
+                    : 'Disconnect'}
                 </Button>
               </XStack>
 
@@ -119,9 +126,7 @@ export default function GarminPage() {
                     Last Sync: {formatDate(connection.lastSyncAt)}
                   </Text>
                   {connection.lastSyncStatus === 'success' && (
-                    <Text fontSize="$2">
-                      ✓ Sync successful
-                    </Text>
+                    <Text fontSize="$2">✓ Sync successful</Text>
                   )}
                   {connection.lastSyncStatus === 'error' && (
                     <Text fontSize="$2">
@@ -136,12 +141,14 @@ export default function GarminPage() {
           <Card padding="$4">
             <YStack gap="$3">
               <Text>
-                Connect your Garmin account to sync health data including steps, heart
-                rate, sleep, and activities.
+                Connect your Garmin account to sync health data including steps,
+                heart rate, sleep, and activities.
               </Text>
 
               {!showForm ? (
-                <Button onPress={() => setShowForm(true)}>Connect Garmin</Button>
+                <Button onPress={() => setShowForm(true)}>
+                  Connect Garmin
+                </Button>
               ) : (
                 <YStack gap="$3">
                   <Input
@@ -163,11 +170,7 @@ export default function GarminPage() {
                       onPress={handleConnect}
                       disabled={connectMutation.isPending}
                     >
-                      {connectMutation.isPending ? (
-                        <Spinner />
-                      ) : (
-                        'Connect'
-                      )}
+                      {connectMutation.isPending ? <Spinner /> : 'Connect'}
                     </Button>
                     <Button
                       flex={1}
@@ -199,10 +202,15 @@ export default function GarminPage() {
             ) : latestMetrics && latestMetrics.length > 0 ? (
               <YStack gap="$3">
                 {latestMetrics
-                  .filter((metric) => metric.metricType !== 'heart_rate_detailed')
+                  .filter(
+                    (metric) => metric.metricType !== 'heart_rate_detailed',
+                  )
                   .map((metric) => (
                     <Card key={metric.id} padding="$3">
-                      <XStack justifyContent="space-between" alignItems="center">
+                      <XStack
+                        justifyContent="space-between"
+                        alignItems="center"
+                      >
                         <YStack>
                           <Text fontWeight="bold" textTransform="capitalize">
                             {metric.metricType.replace(/_/g, ' ')}
@@ -221,8 +229,8 @@ export default function GarminPage() {
             ) : (
               <Card padding="$4">
                 <Text textAlign="center" opacity={0.7}>
-                  No health data synced yet. Data will appear after the initial sync
-                  completes.
+                  No health data synced yet. Data will appear after the initial
+                  sync completes.
                 </Text>
               </Card>
             )}
