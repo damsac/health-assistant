@@ -28,6 +28,7 @@ garmin.post('/connect', async (c) => {
         .update(garminConnection)
         .set({
           garminEmail,
+          garminPassword,
           isActive: true,
           updatedAt: new Date(),
         })
@@ -36,6 +37,7 @@ garmin.post('/connect', async (c) => {
       await db.insert(garminConnection).values({
         userId: session.user.id,
         garminEmail,
+        garminPassword,
         isActive: true,
       });
     }
@@ -44,11 +46,27 @@ garmin.post('/connect', async (c) => {
     const command = `cd ${pythonPath} && .venv/bin/python3 garmin_sync.py "${session.user.id}" "${garminEmail}" "${garminPassword}" 7`;
 
     execAsync(command)
-      .then(() => {
+      .then(async () => {
         console.log(`✓ Garmin sync completed for user ${session.user.id}`);
+        await db
+          .update(garminConnection)
+          .set({
+            lastSyncAt: new Date(),
+            lastSyncStatus: 'success',
+            lastSyncError: null,
+          })
+          .where(eq(garminConnection.userId, session.user.id));
       })
-      .catch((error) => {
+      .catch(async (error) => {
         console.error(`✗ Garmin sync failed for user ${session.user.id}:`, error);
+        await db
+          .update(garminConnection)
+          .set({
+            lastSyncAt: new Date(),
+            lastSyncStatus: 'error',
+            lastSyncError: error.message || 'Sync failed',
+          })
+          .where(eq(garminConnection.userId, session.user.id));
       });
 
     return c.json({

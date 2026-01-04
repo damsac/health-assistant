@@ -148,6 +148,7 @@ export const garminConnection = pgTable(
       .unique()
       .references(() => user.id, { onDelete: 'cascade' }),
     garminEmail: text('garmin_email').notNull(),
+    garminPassword: text('garmin_password').notNull(),
     isActive: boolean('is_active').notNull().default(true),
     lastSyncAt: timestamp('last_sync_at'),
     lastSyncStatus: text('last_sync_status'),
