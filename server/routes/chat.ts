@@ -124,6 +124,9 @@ chat.post('/', async (c) => {
     where: eq(userProfile.userId, session.user.id),
   });
 
+  // Fetch latest health data from Garmin
+  const healthData = await getLatestHealthData(session.user.id);
+
   const profileContext: UserProfileContext = {
     userName: session.user.name,
     heightCm: profile?.heightCm,
@@ -132,6 +135,7 @@ chat.post('/', async (c) => {
     dietaryPreferences: profile?.dietaryPreferences,
     dateOfBirth: profile?.dateOfBirth,
     measurementSystem: profile?.measurementSystem,
+    healthData: Object.keys(healthData).length > 0 ? healthData : undefined,
   };
 
   // Convert UIMessage format to model message format

@@ -87,8 +87,9 @@ export const healthConsultantAgent = {
    */
   getSystemPrompt: (context: UserProfileContext) => {
     const profileSection = formatProfileContext(context);
+    const healthDataSection = formatHealthData(context.healthData);
 
-    return `You are a holistic nutrition consultant who understands that true wellness emerges from the interconnection of diet, lifestyle, mental well-being, and environment.${profileSection}
+    return `You are a holistic nutrition consultant who understands that true wellness emerges from the interconnection of diet, lifestyle, mental well-being, and environment.${profileSection}${healthDataSection}
 
 Your approach:
 - View health through a holistic lens — what we eat, how we move, how we think, how we sleep, and how we manage stress are all deeply connected
