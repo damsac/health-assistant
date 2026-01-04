@@ -198,23 +198,25 @@ export default function GarminPage() {
               </Card>
             ) : latestMetrics && latestMetrics.length > 0 ? (
               <YStack gap="$3">
-                {latestMetrics.map((metric) => (
-                  <Card key={metric.id} padding="$3">
-                    <XStack justifyContent="space-between" alignItems="center">
-                      <YStack>
-                        <Text fontWeight="bold" textTransform="capitalize">
-                          {metric.metricType.replace(/_/g, ' ')}
+                {latestMetrics
+                  .filter((metric) => metric.metricType !== 'heart_rate_detailed')
+                  .map((metric) => (
+                    <Card key={metric.id} padding="$3">
+                      <XStack justifyContent="space-between" alignItems="center">
+                        <YStack>
+                          <Text fontWeight="bold" textTransform="capitalize">
+                            {metric.metricType.replace(/_/g, ' ')}
+                          </Text>
+                          <Text fontSize="$2" opacity={0.7}>
+                            {formatDate(metric.recordedAt)}
+                          </Text>
+                        </YStack>
+                        <Text fontSize="$6" fontWeight="bold">
+                          {formatMetricValue(metric.value, metric.unit)}
                         </Text>
-                        <Text fontSize="$2" opacity={0.7}>
-                          {formatDate(metric.recordedAt)}
-                        </Text>
-                      </YStack>
-                      <Text fontSize="$6" fontWeight="bold">
-                        {formatMetricValue(metric.value, metric.unit)}
-                      </Text>
-                    </XStack>
-                  </Card>
-                ))}
+                      </XStack>
+                    </Card>
+                  ))}
               </YStack>
             ) : (
               <Card padding="$4">
