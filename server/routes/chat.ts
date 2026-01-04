@@ -14,6 +14,7 @@ import {
 } from '../agents/health-consultant';
 import { type AuthEnv, authMiddleware } from '../middleware/auth';
 import { conversationService } from '../services/conversation';
+import { getLatestHealthData } from '../services/health-data';
 
 type ChatRequest = {
   conversationId?: string;
