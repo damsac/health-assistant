@@ -49,7 +49,7 @@ export function useConnectGarmin() {
       garminEmail: string;
       garminPassword: string;
     }) => {
-      const response = await fetch('/api/garmin/connect', {
+      const response = await fetch('http://localhost:4000/garmin/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ garminEmail, garminPassword }),
@@ -75,7 +75,7 @@ export function useDisconnectGarmin() {
 
   return useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/garmin/connection', {
+      const response = await fetch('http://localhost:4000/garmin/disconnect', {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -101,7 +101,7 @@ export function useHealthMetrics(metricType?: string, days = 7) {
         ...(metricType && { type: metricType }),
       });
 
-      const response = await fetch(`/api/garmin/metrics?${params}`, {
+      const response = await fetch(`http://localhost:4000/garmin/metrics?${params}`, {
         credentials: 'include',
       });
 
@@ -120,7 +120,7 @@ export function useHealthMetricsSummary(days = 7) {
     queryFn: async () => {
       const params = new URLSearchParams({ days: days.toString() });
 
-      const response = await fetch(`/api/garmin/metrics/summary?${params}`, {
+      const response = await fetch(`http://localhost:4000/garmin/metrics/summary?${params}`, {
         credentials: 'include',
       });
 
@@ -138,7 +138,7 @@ export function useSyncGarmin() {
 
   return useMutation({
     mutationFn: async () => {
-      const response = await fetch('/garmin/sync', {
+      const response = await fetch('http://localhost:4000/garmin/sync', {
         method: 'POST',
         credentials: 'include',
       });
@@ -161,7 +161,7 @@ export function useLatestHealthMetrics() {
   return useQuery({
     queryKey: ['garmin', 'metrics', 'latest'],
     queryFn: async () => {
-      const response = await fetch('/api/garmin/metrics/latest', {
+      const response = await fetch('http://localhost:4000/garmin/metrics/latest', {
         credentials: 'include',
       });
 
