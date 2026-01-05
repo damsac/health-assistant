@@ -130,7 +130,7 @@ class GarminSync:
                         'duration': activity.get('duration'),
                         'distance': activity.get('distance'),
                         'calories': activity.get('calories')
-                    }))
+                    }), force=force)
                 
                 print(f"  ✓ {len(activities)} activities synced")
             return True
@@ -189,9 +189,10 @@ class GarminSync:
     
     def sync_last_n_days(self, days=7, force=False):
         """Sync data for the last N days"""
-        today = datetime.now().date()
+        # Use UTC date to match Garmin's timezone
+        today = datetime.utcnow().date()
         
-        print(f"\n📊 Syncing last {days} days of Garmin data...")
+        print(f"\n📊 Syncing last {days} days of Garmin data (UTC date: {today})...")
         print("=" * 50)
         
         for i in range(days):
