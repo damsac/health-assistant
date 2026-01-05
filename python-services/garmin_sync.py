@@ -219,19 +219,37 @@ class GarminSync:
     
     def sync_last_n_days(self, days=7, force=False):
         """Sync data for the last N days"""
-        # Use local date (not UTC) to match Garmin's date system
-        today = datetime.now().date()
+        # Try both today and yesterday to catch data in different timezones
+        local_today = datetime.now().date()
+        utc_today = datetime.now(timezone.utc).date()
         
-        print(f"\n📊 Syncing last {days} days of Garmin data (Local date: {today})...")
+        print(f"\n📊 Syncing last {days} days of Garmin data...")
+        print(f"   Local date: {local_today}")
+        print(f"   UTC date: {utc_today}")
         print("=" * 50)
         
-        # Sync dates starting from today
-        for i in range(days):
-            date = today - timedelta(days=i)
+        # Create a list of dates to try, starting with both today dates
+        dates_to_check = [local_today]
+        if utc_today != local_today:
+            dates_to_check.append(utc_today)
+        
+        # Add previous days
+        for i in range(1, days):
+            dates_to_check.append(local_today - timedelta(days=i))
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_dates = []
+        for date in dates_to_check:
+            if date not in seen:
+                seen.add(date)
+                unique_dates.append(date)
+        
+        for i, date in enumerate(unique_dates[:days]):
             print(f"\n📅 {date.strftime('%Y-%m-%d')} ({i} days ago)")
             
-            # Force refresh today's data
-            is_today = date == today
+            # Force refresh for today's dates
+            is_today = date in [local_today, utc_today]
             self.sync_daily_summary(date, force=is_today)
             self.sync_heart_rate(date, force=is_today)
             self.sync_sleep(date, force=is_today)
