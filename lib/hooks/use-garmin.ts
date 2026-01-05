@@ -133,6 +133,30 @@ export function useHealthMetricsSummary(days = 7) {
   });
 }
 
+export function useSyncGarmin() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/garmin/sync', {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to sync Garmin data');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['garmin', 'connection'] });
+      queryClient.invalidateQueries({ queryKey: ['garmin', 'metrics'] });
+    },
+  });
+}
+
 export function useLatestHealthMetrics() {
   return useQuery({
     queryKey: ['garmin', 'metrics', 'latest'],

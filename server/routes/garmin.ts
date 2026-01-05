@@ -1,7 +1,7 @@
-import { exec } from 'child_process';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
-import { promisify } from 'util';
 import { db, garminConnection, healthMetric } from '@/lib/db';
 import { type AuthEnv, authMiddleware } from '../middleware/auth';
 
@@ -42,7 +42,7 @@ garmin.post('/connect', async (c) => {
       });
     }
 
-    const pythonPath = process.cwd() + '/python-services';
+    const pythonPath = `${process.cwd()}/python-services`;
     const command = `cd ${pythonPath} && .venv/bin/python3 garmin_sync.py "${session.user.id}" "${garminEmail}" "${garminPassword}" 7`;
 
     execAsync(command)
@@ -67,7 +67,7 @@ garmin.post('/connect', async (c) => {
           .set({
             lastSyncAt: new Date(),
             lastSyncStatus: 'error',
-            lastSyncError: error.message || 'Sync failed',
+            lastSyncError: (error as Error).message || 'Sync failed',
           })
           .where(eq(garminConnection.userId, session.user.id));
       });
@@ -122,16 +122,50 @@ garmin.post('/sync', async (c) => {
     return c.json({ error: 'Garmin connection is inactive' }, 400);
   }
 
-  return c.json({
-    success: true,
-    message: 'Manual sync requires re-entering credentials for security',
-  });
+  if (!connection.garminEmail || !connection.garminPassword) {
+    return c.json({ error: 'Garmin credentials not stored' }, 400);
+  }
+
+  const pythonPath = `${process.cwd()}/python-services`;
+  const command = `cd ${pythonPath} && .venv/bin/python3 garmin_sync.py "${session.user.id}" "${connection.garminEmail}" "${connection.garminPassword}" 3`;
+
+  try {
+    await execAsync(command);
+    console.log(`✓ Garmin sync completed for user ${session.user.id}`);
+
+    await db
+      .update(garminConnection)
+      .set({
+        lastSyncAt: new Date(),
+        lastSyncStatus: 'success',
+        lastSyncError: null,
+      })
+      .where(eq(garminConnection.userId, session.user.id));
+
+    return c.json({
+      success: true,
+      message: 'Garmin data synced successfully',
+    });
+  } catch (error) {
+    console.error(`✗ Garmin sync failed for user ${session.user.id}:`, error);
+
+    await db
+      .update(garminConnection)
+      .set({
+        lastSyncAt: new Date(),
+        lastSyncStatus: 'error',
+        lastSyncError: (error as Error).message || 'Sync failed',
+      })
+      .where(eq(garminConnection.userId, session.user.id));
+
+    return c.json({ error: 'Failed to sync Garmin data' }, 500);
+  }
 });
 
 garmin.get('/metrics', async (c) => {
   const session = c.get('session');
   const metricType = c.req.query('type');
-  const days = parseInt(c.req.query('days') || '7');
+  const days = parseInt(c.req.query('days') || '7', 10);
 
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
@@ -156,7 +190,7 @@ garmin.get('/metrics', async (c) => {
 
 garmin.get('/metrics/summary', async (c) => {
   const session = c.get('session');
-  const days = parseInt(c.req.query('days') || '7');
+  const days = parseInt(c.req.query('days') || '7', 10);
 
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);

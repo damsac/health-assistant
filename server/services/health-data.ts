@@ -54,26 +54,31 @@ export async function getLatestHealthData(
   }
 
   // Parse values
-  const parseFloat = (value: string | undefined): number | undefined => {
+  const parseMetricFloat = (value: string | undefined): number | undefined => {
     if (!value) return undefined;
     const parsed = Number.parseFloat(value);
     return Number.isNaN(parsed) ? undefined : parsed;
   };
 
-  summary.steps = parseFloat(metricMap.get('steps'));
-  summary.calories = parseFloat(metricMap.get('calories'));
-  summary.distance = parseFloat(metricMap.get('distance'));
-  summary.restingHeartRate = parseFloat(metricMap.get('resting_heart_rate'));
-  summary.maxHeartRate = parseFloat(metricMap.get('max_heart_rate'));
-  summary.minHeartRate = parseFloat(metricMap.get('min_heart_rate'));
-  summary.sleepDuration = parseFloat(metricMap.get('sleep_duration'));
-  summary.deepSleep = parseFloat(metricMap.get('deep_sleep'));
-  summary.lightSleep = parseFloat(metricMap.get('light_sleep'));
-  summary.remSleep = parseFloat(metricMap.get('rem_sleep'));
-  summary.activeMinutes = parseFloat(metricMap.get('active_minutes'));
-  summary.vigorousMinutes = parseFloat(metricMap.get('vigorous_minutes'));
-  summary.stressAvg = parseFloat(metricMap.get('stress_avg'));
-  summary.stressMax = parseFloat(metricMap.get('stress_max'));
+  // Debug: Log what we're getting
+  console.log('Health data metrics found:', Array.from(metricMap.entries()));
+
+  summary.steps = parseMetricFloat(metricMap.get('steps'));
+  summary.calories = parseMetricFloat(metricMap.get('calories'));
+  summary.distance = parseMetricFloat(metricMap.get('distance'));
+  summary.restingHeartRate = parseMetricFloat(metricMap.get('resting_heart_rate'));
+  summary.maxHeartRate = parseMetricFloat(metricMap.get('max_heart_rate'));
+  summary.minHeartRate = parseMetricFloat(metricMap.get('min_heart_rate'));
+  summary.sleepDuration = parseMetricFloat(metricMap.get('sleep_duration'));
+  summary.deepSleep = parseMetricFloat(metricMap.get('deep_sleep'));
+  summary.lightSleep = parseMetricFloat(metricMap.get('light_sleep'));
+  summary.remSleep = parseMetricFloat(metricMap.get('rem_sleep'));
+  summary.activeMinutes = parseMetricFloat(metricMap.get('active_minutes'));
+  summary.vigorousMinutes = parseMetricFloat(metricMap.get('vigorous_minutes'));
+  summary.stressAvg = parseMetricFloat(metricMap.get('stress_avg'));
+  summary.stressMax = parseMetricFloat(metricMap.get('stress_max'));
+
+  console.log('Health data summary:', summary);
 
   return summary;
 }

@@ -54,23 +54,23 @@ class GarminSync:
             print(f"  ✗ Error syncing daily summary: {e}")
             return False
     
-    def sync_heart_rate(self, date):
+    def sync_heart_rate(self, date, force=False):
         """Fetch and store heart rate data"""
         try:
             hr_data = self.client.get_heart_rates(date.isoformat())
             
             if hr_data:
                 if 'heartRateValues' in hr_data:
-                    self._store_metric('heart_rate_detailed', json.dumps(hr_data['heartRateValues']), 'bpm', date, json.dumps(hr_data))
+                    self._store_metric('heart_rate_detailed', json.dumps(hr_data['heartRateValues']), 'bpm', date, json.dumps(hr_data), force=force)
                 
                 if 'restingHeartRate' in hr_data:
-                    self._store_metric('resting_heart_rate', hr_data['restingHeartRate'], 'bpm', date)
+                    self._store_metric('resting_heart_rate', hr_data['restingHeartRate'], 'bpm', date, force=force)
                 
                 if 'maxHeartRate' in hr_data:
-                    self._store_metric('max_heart_rate', hr_data['maxHeartRate'], 'bpm', date)
+                    self._store_metric('max_heart_rate', hr_data['maxHeartRate'], 'bpm', date, force=force)
                 
                 if 'minHeartRate' in hr_data:
-                    self._store_metric('min_heart_rate', hr_data['minHeartRate'], 'bpm', date)
+                    self._store_metric('min_heart_rate', hr_data['minHeartRate'], 'bpm', date, force=force)
                     
                 print(f"  ✓ Heart rate synced")
             return True
@@ -138,17 +138,17 @@ class GarminSync:
             print(f"  ✗ Error syncing activities: {e}")
             return False
     
-    def sync_stress(self, date):
+    def sync_stress(self, date, force=False):
         """Fetch and store stress data"""
         try:
             stress_data = self.client.get_stress_data(date.isoformat())
             
             if stress_data:
                 if 'avgStressLevel' in stress_data:
-                    self._store_metric('stress_avg', stress_data['avgStressLevel'], 'level', date, json.dumps(stress_data))
+                    self._store_metric('stress_avg', stress_data['avgStressLevel'], 'level', date, json.dumps(stress_data), force=force)
                 
                 if 'maxStressLevel' in stress_data:
-                    self._store_metric('stress_max', stress_data['maxStressLevel'], 'level', date)
+                    self._store_metric('stress_max', stress_data['maxStressLevel'], 'level', date, force=force)
                     
                 print(f"  ✓ Stress data synced")
             return True
@@ -156,13 +156,25 @@ class GarminSync:
             print(f"  ✗ Error syncing stress: {e}")
             return False
     
-    def _store_metric(self, metric_type, value, unit, recorded_at, metadata=None):
+    def _store_metric(self, metric_type, value, unit, recorded_at, metadata=None, force=False):
         """Store a health metric in the database"""
         cursor = self.db_conn.cursor()
         
         value_str = str(value) if not isinstance(value, str) else value
         
         try:
+            # Check if metric already exists for this date
+            cursor.execute("""
+                SELECT id FROM health_metric 
+                WHERE user_id = %s AND metric_type = %s AND DATE(recorded_at) = %s
+                LIMIT 1
+            """, (self.user_id, metric_type, recorded_at.date()))
+            
+            if cursor.fetchone():
+                print(f"    Skipping {metric_type}: already exists for {recorded_at.date()}")
+                cursor.close()
+                return
+            
             cursor.execute("""
                 INSERT INTO health_metric (user_id, metric_type, value, unit, recorded_at, metadata)
                 VALUES (%s, %s, %s, %s, %s, %s)
@@ -175,7 +187,7 @@ class GarminSync:
         finally:
             cursor.close()
     
-    def sync_last_n_days(self, days=7):
+    def sync_last_n_days(self, days=7, force=False):
         """Sync data for the last N days"""
         today = datetime.now().date()
         

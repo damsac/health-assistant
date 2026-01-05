@@ -7,6 +7,7 @@ import { chatRoute } from './routes/chat';
 import { garminRoute } from './routes/garmin';
 
 const app = new Hono<AuthEnv>();
+
 // Middleware
 app.use('*', logger());
 app.use(

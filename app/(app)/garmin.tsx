@@ -17,6 +17,7 @@ import {
   useDisconnectGarmin,
   useGarminConnection,
   useLatestHealthMetrics,
+  useSyncGarmin,
 } from '@/lib/hooks/use-garmin';
 
 export default function GarminPage() {
@@ -31,6 +32,7 @@ export default function GarminPage() {
     useLatestHealthMetrics();
   const connectMutation = useConnectGarmin();
   const disconnectMutation = useDisconnectGarmin();
+  const syncMutation = useSyncGarmin();
 
   const handleConnect = async () => {
     if (!email || !password) {
@@ -59,9 +61,20 @@ export default function GarminPage() {
       try {
         await disconnectMutation.mutateAsync();
         alert('Garmin disconnected successfully');
-      } catch (error) {
+      } catch (_error) {
         alert('Failed to disconnect Garmin');
       }
+    }
+  };
+
+  const handleRefresh = async () => {
+    try {
+      await syncMutation.mutateAsync();
+      alert('Garmin data refreshed successfully!');
+    } catch (error) {
+      alert(
+        error instanceof Error ? error.message : 'Failed to refresh Garmin data',
+      );
     }
   };
 
@@ -72,7 +85,7 @@ export default function GarminPage() {
   const formatMetricValue = (value: string, unit: string | null) => {
     try {
       const numValue = parseFloat(value);
-      if (!isNaN(numValue)) {
+      if (!Number.isNaN(numValue)) {
         return `${numValue.toFixed(1)} ${unit || ''}`;
       }
     } catch {
@@ -108,16 +121,26 @@ export default function GarminPage() {
                   <Text fontWeight="bold">Connected Account</Text>
                   <Text opacity={0.7}>{connection.garminEmail}</Text>
                 </YStack>
-                <Button
-                  size="$3"
-                  theme="red"
-                  onPress={handleDisconnect}
-                  disabled={disconnectMutation.isPending}
-                >
-                  {disconnectMutation.isPending
-                    ? 'Disconnecting...'
-                    : 'Disconnect'}
-                </Button>
+                <XStack gap="$2">
+                  <Button
+                    size="$3"
+                    theme="green"
+                    onPress={handleRefresh}
+                    disabled={syncMutation.isPending}
+                  >
+                    {syncMutation.isPending ? <Spinner size="small" /> : 'Refresh Data'}
+                  </Button>
+                  <Button
+                    size="$3"
+                    theme="red"
+                    onPress={handleDisconnect}
+                    disabled={disconnectMutation.isPending}
+                  >
+                    {disconnectMutation.isPending
+                      ? 'Disconnecting...'
+                      : 'Disconnect'}
+                  </Button>
+                </XStack>
               </XStack>
 
               {connection.lastSyncAt && (
