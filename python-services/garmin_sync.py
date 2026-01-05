@@ -28,25 +28,25 @@ class GarminSync:
             self._update_sync_status('error', str(e))
             return False
     
-    def sync_daily_summary(self, date):
+    def sync_daily_summary(self, date, force=False):
         """Fetch and store daily summary data"""
         try:
             summary = self.client.get_stats(date.isoformat())
             
             if 'totalSteps' in summary:
-                self._store_metric('steps', summary['totalSteps'], 'steps', date)
+                self._store_metric('steps', summary['totalSteps'], 'steps', date, force=force)
             
             if 'totalKilocalories' in summary:
-                self._store_metric('calories', summary['totalKilocalories'], 'kcal', date)
+                self._store_metric('calories', summary['totalKilocalories'], 'kcal', date, force=force)
             
             if 'totalDistanceMeters' in summary:
-                self._store_metric('distance', summary['totalDistanceMeters'], 'meters', date)
+                self._store_metric('distance', summary['totalDistanceMeters'], 'meters', date, force=force)
             
             if 'moderateIntensityMinutes' in summary:
-                self._store_metric('active_minutes', summary['moderateIntensityMinutes'], 'minutes', date)
+                self._store_metric('active_minutes', summary['moderateIntensityMinutes'], 'minutes', date, force=force)
             
             if 'vigorousIntensityMinutes' in summary:
-                self._store_metric('vigorous_minutes', summary['vigorousIntensityMinutes'], 'minutes', date)
+                self._store_metric('vigorous_minutes', summary['vigorousIntensityMinutes'], 'minutes', date, force=force)
                 
             print(f"  ✓ Daily summary synced")
             return True
@@ -78,7 +78,7 @@ class GarminSync:
             print(f"  ✗ Error syncing heart rate: {e}")
             return False
     
-    def sync_sleep(self, date):
+    def sync_sleep(self, date, force=False):
         """Fetch and store sleep data"""
         try:
             sleep_data = self.client.get_sleep_data(date.isoformat())
@@ -88,23 +88,23 @@ class GarminSync:
                 
                 if 'sleepTimeSeconds' in sleep_dto:
                     sleep_minutes = sleep_dto['sleepTimeSeconds'] / 60
-                    self._store_metric('sleep_duration', sleep_minutes, 'minutes', date, json.dumps(sleep_dto))
+                    self._store_metric('sleep_duration', sleep_minutes, 'minutes', date, json.dumps(sleep_dto), force=force)
                 
                 if 'deepSleepSeconds' in sleep_dto:
                     deep_sleep_minutes = sleep_dto['deepSleepSeconds'] / 60
-                    self._store_metric('deep_sleep', deep_sleep_minutes, 'minutes', date)
+                    self._store_metric('deep_sleep', deep_sleep_minutes, 'minutes', date, force=force)
                 
                 if 'lightSleepSeconds' in sleep_dto:
                     light_sleep_minutes = sleep_dto['lightSleepSeconds'] / 60
-                    self._store_metric('light_sleep', light_sleep_minutes, 'minutes', date)
+                    self._store_metric('light_sleep', light_sleep_minutes, 'minutes', date, force=force)
                 
                 if 'remSleepSeconds' in sleep_dto:
                     rem_sleep_minutes = sleep_dto['remSleepSeconds'] / 60
-                    self._store_metric('rem_sleep', rem_sleep_minutes, 'minutes', date)
+                    self._store_metric('rem_sleep', rem_sleep_minutes, 'minutes', date, force=force)
                 
                 if 'awakeSleepSeconds' in sleep_dto:
                     awake_minutes = sleep_dto['awakeSleepSeconds'] / 60
-                    self._store_metric('awake_time', awake_minutes, 'minutes', date)
+                    self._store_metric('awake_time', awake_minutes, 'minutes', date, force=force)
                     
                 print(f"  ✓ Sleep data synced")
             return True
@@ -112,7 +112,7 @@ class GarminSync:
             print(f"  ✗ Error syncing sleep: {e}")
             return False
     
-    def sync_activities(self, date):
+    def sync_activities(self, date, force=False):
         """Fetch and store activities"""
         try:
             activities = self.client.get_activities_by_date(
