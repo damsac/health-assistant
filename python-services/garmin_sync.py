@@ -201,8 +201,13 @@ class GarminSync:
         print(f"\n📊 Syncing last {days} days of Garmin data (UTC date: {today})...")
         print("=" * 50)
         
-        for i in range(days):
-            date = today - timedelta(days=i)
+        # Also try yesterday's UTC date in case Garmin hasn't updated today yet
+        dates_to_sync = [today]
+        if days > 1:
+            for i in range(1, days):
+                dates_to_sync.append(today - timedelta(days=i))
+        
+        for i, date in enumerate(dates_to_sync):
             print(f"\n📅 {date.strftime('%Y-%m-%d')} ({i} days ago)")
             
             # Force refresh today's data
