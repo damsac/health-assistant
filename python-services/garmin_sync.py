@@ -35,23 +35,23 @@ class GarminSync:
             print(f"    Fetching daily summary for {date_str} (force={force})")
             summary = self.client.get_stats(date_str)
             
-            if 'totalSteps' in summary:
+            if 'totalSteps' in summary and summary['totalSteps'] is not None:
                 print(f"    Found steps: {summary['totalSteps']}")
                 self._store_metric('steps', summary['totalSteps'], 'steps', date, force=force)
             
-            if 'totalKilocalories' in summary:
+            if 'totalKilocalories' in summary and summary['totalKilocalories'] is not None:
                 print(f"    Found calories: {summary['totalKilocalories']}")
                 self._store_metric('calories', summary['totalKilocalories'], 'kcal', date, force=force)
             
-            if 'totalDistanceMeters' in summary:
+            if 'totalDistanceMeters' in summary and summary['totalDistanceMeters'] is not None:
                 print(f"    Found distance: {summary['totalDistanceMeters']}")
                 self._store_metric('distance', summary['totalDistanceMeters'], 'meters', date, force=force)
             
-            if 'moderateIntensityMinutes' in summary:
+            if 'moderateIntensityMinutes' in summary and summary['moderateIntensityMinutes'] is not None:
                 print(f"    Found active minutes: {summary['moderateIntensityMinutes']}")
                 self._store_metric('active_minutes', summary['moderateIntensityMinutes'], 'minutes', date, force=force)
             
-            if 'vigorousIntensityMinutes' in summary:
+            if 'vigorousIntensityMinutes' in summary and summary['vigorousIntensityMinutes'] is not None:
                 print(f"    Found vigorous minutes: {summary['vigorousIntensityMinutes']}")
                 self._store_metric('vigorous_minutes', summary['vigorousIntensityMinutes'], 'minutes', date, force=force)
                 
@@ -165,6 +165,11 @@ class GarminSync:
     
     def _store_metric(self, metric_type, value, unit, recorded_at, metadata=None, force=False):
         """Store a health metric in the database"""
+        # Skip None values
+        if value is None:
+            print(f"    Skipping {metric_type}: value is None")
+            return
+            
         cursor = self.db_conn.cursor()
         
         value_str = str(value) if not isinstance(value, str) else value
@@ -214,31 +219,24 @@ class GarminSync:
     
     def sync_last_n_days(self, days=7, force=False):
         """Sync data for the last N days"""
-        # Use local date but with proper timezone
-        today = datetime.now(timezone.utc).date()
+        # Use local date (not UTC) to match Garmin's date system
+        today = datetime.now().date()
         
-        print(f"\n📊 Syncing last {days} days of Garmin data (UTC date: {today})...")
+        print(f"\n📊 Syncing last {days} days of Garmin data (Local date: {today})...")
         print("=" * 50)
         
-        # Also try yesterday's UTC date in case Garmin hasn't updated today yet
-        dates_to_sync = [today]
-        if days > 1:
-            for i in range(1, days):
-                dates_to_sync.append(today - timedelta(days=i))
-        
-        for i, date in enumerate(dates_to_sync):
+        # Sync dates starting from today
+        for i in range(days):
+            date = today - timedelta(days=i)
             print(f"\n📅 {date.strftime('%Y-%m-%d')} ({i} days ago)")
-            
-            # Convert date to datetime with time component
-            date_with_time = datetime.combine(date, datetime.min.time()).replace(tzinfo=timezone.utc)
             
             # Force refresh today's data
             is_today = date == today
-            self.sync_daily_summary(date_with_time, force=is_today)
-            self.sync_heart_rate(date_with_time, force=is_today)
-            self.sync_sleep(date_with_time, force=is_today)
-            self.sync_activities(date_with_time, force=is_today)
-            self.sync_stress(date_with_time, force=is_today)
+            self.sync_daily_summary(date, force=is_today)
+            self.sync_heart_rate(date, force=is_today)
+            self.sync_sleep(date, force=is_today)
+            self.sync_activities(date, force=is_today)
+            self.sync_stress(date, force=is_today)
         
         self._update_sync_status('success')
         print(f"\n✅ Sync complete!")
