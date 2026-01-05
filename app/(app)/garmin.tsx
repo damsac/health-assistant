@@ -82,8 +82,25 @@ export default function GarminPage() {
     return new Date(dateString).toLocaleString();
   };
 
-  const formatMetricValue = (value: string, unit: string | null) => {
+  const formatMetricValue = (value: string, unit: string | null, metricType: string) => {
     try {
+      // Handle activity JSON specially
+      if (metricType === 'activity' && value.startsWith('{')) {
+        const activity = JSON.parse(value);
+        return (
+          <YStack alignItems="flex-end" gap="$1">
+            <Text fontSize="$6" fontWeight="bold">
+              {activity.activityName || 'Unknown Activity'}
+            </Text>
+            <Text fontSize="$3" opacity={0.7}>
+              {activity.duration ? `${Math.round(activity.duration / 60)} min` : ''}
+              {activity.distance ? ` • ${Math.round(activity.distance / 1000 * 10) / 10} km` : ''}
+              {activity.calories ? ` • ${activity.calories} cal` : ''}
+            </Text>
+          </YStack>
+        );
+      }
+      
       const numValue = parseFloat(value);
       if (!Number.isNaN(numValue)) {
         return `${numValue.toFixed(1)} ${unit || ''}`;
@@ -236,14 +253,14 @@ export default function GarminPage() {
                       >
                         <YStack>
                           <Text fontWeight="bold" textTransform="capitalize">
-                            {metric.metricType.replace(/_/g, ' ')}
+                            {metric.metricType === 'activity' ? 'Latest Activity' : metric.metricType.replace(/_/g, ' ')}
                           </Text>
                           <Text fontSize="$2" opacity={0.7}>
                             {formatDate(metric.recordedAt)}
                           </Text>
                         </YStack>
                         <Text fontSize="$6" fontWeight="bold">
-                          {formatMetricValue(metric.value, metric.unit)}
+                          {formatMetricValue(metric.value, metric.unit, metric.metricType)}
                         </Text>
                       </XStack>
                     </Card>
