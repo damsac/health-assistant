@@ -130,8 +130,10 @@ garmin.post('/sync', async (c) => {
   const command = `cd ${pythonPath} && DATABASE_URL="${process.env.DATABASE_URL}" .venv/bin/python3 garmin_sync.py "${session.user.id}" "${connection.garminEmail}" "${connection.garminPassword}" 7`;
 
   try {
-    await execAsync(command);
+    const { stdout, stderr } = await execAsync(command);
     console.log(`✓ Garmin sync completed for user ${session.user.id}`);
+    console.log('Sync output:', stdout);
+    if (stderr) console.log('Sync errors:', stderr);
 
     await db
       .update(garminConnection)

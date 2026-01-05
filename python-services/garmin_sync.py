@@ -3,7 +3,7 @@
 import os
 import json
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from garminconnect import Garmin
 import psycopg2
 from dotenv import load_dotenv
@@ -31,8 +31,9 @@ class GarminSync:
     def sync_daily_summary(self, date, force=False):
         """Fetch and store daily summary data"""
         try:
-            print(f"    Fetching daily summary for {date.isoformat()} (force={force})")
-            summary = self.client.get_stats(date.isoformat())
+            date_str = date.strftime('%Y-%m-%d') if hasattr(date, 'strftime') else date.isoformat()
+            print(f"    Fetching daily summary for {date_str} (force={force})")
+            summary = self.client.get_stats(date_str)
             
             if 'totalSteps' in summary:
                 print(f"    Found steps: {summary['totalSteps']}")
@@ -169,16 +170,24 @@ class GarminSync:
         value_str = str(value) if not isinstance(value, str) else value
         
         try:
+            # Convert date to datetime if needed
+            if isinstance(recorded_at, str):
+                recorded_dt = datetime.fromisoformat(recorded_at)
+            elif hasattr(recorded_at, 'date'):
+                recorded_dt = recorded_at
+            else:
+                recorded_dt = datetime.combine(recorded_at, datetime.min.time()).replace(tzinfo=timezone.utc)
+            
             # Check if metric already exists for this date (unless forcing)
             if not force:
                 cursor.execute("""
                     SELECT id FROM health_metric 
                     WHERE user_id = %s AND metric_type = %s AND DATE(recorded_at) = %s
                     LIMIT 1
-                """, (self.user_id, metric_type, recorded_at.date()))
+                """, (self.user_id, metric_type, recorded_dt.date()))
                 
                 if cursor.fetchone():
-                    print(f"    Skipping {metric_type}: already exists for {recorded_at.date()}")
+                    print(f"    Skipping {metric_type}: already exists for {recorded_dt.date()}")
                     cursor.close()
                     return
             
@@ -187,16 +196,16 @@ class GarminSync:
                 cursor.execute("""
                     DELETE FROM health_metric 
                     WHERE user_id = %s AND metric_type = %s AND DATE(recorded_at) = %s
-                """, (self.user_id, metric_type, recorded_at.date()))
-                print(f"    Deleted existing {metric_type} for {recorded_at.date()}")
+                """, (self.user_id, metric_type, recorded_dt.date()))
+                print(f"    Deleted existing {metric_type} for {recorded_dt.date()}")
             
             cursor.execute("""
                 INSERT INTO health_metric (user_id, metric_type, value, unit, recorded_at, metadata)
                 VALUES (%s, %s, %s, %s, %s, %s)
-            """, (self.user_id, metric_type, value_str, unit, recorded_at, metadata))
+            """, (self.user_id, metric_type, value_str, unit, recorded_dt, metadata))
             
             self.db_conn.commit()
-            print(f"    Stored {metric_type}: {value_str}")
+            print(f"    Stored {metric_type}: {value_str} at {recorded_dt}")
         except Exception as e:
             print(f"    Warning: Could not store {metric_type}: {e}")
             self.db_conn.rollback()
@@ -205,8 +214,8 @@ class GarminSync:
     
     def sync_last_n_days(self, days=7, force=False):
         """Sync data for the last N days"""
-        # Use UTC date to match Garmin's timezone
-        today = datetime.utcnow().date()
+        # Use local date but with proper timezone
+        today = datetime.now(timezone.utc).date()
         
         print(f"\n📊 Syncing last {days} days of Garmin data (UTC date: {today})...")
         print("=" * 50)
@@ -220,13 +229,16 @@ class GarminSync:
         for i, date in enumerate(dates_to_sync):
             print(f"\n📅 {date.strftime('%Y-%m-%d')} ({i} days ago)")
             
+            # Convert date to datetime with time component
+            date_with_time = datetime.combine(date, datetime.min.time()).replace(tzinfo=timezone.utc)
+            
             # Force refresh today's data
             is_today = date == today
-            self.sync_daily_summary(date, force=is_today)
-            self.sync_heart_rate(date, force=is_today)
-            self.sync_sleep(date, force=is_today)
-            self.sync_activities(date, force=is_today)
-            self.sync_stress(date, force=is_today)
+            self.sync_daily_summary(date_with_time, force=is_today)
+            self.sync_heart_rate(date_with_time, force=is_today)
+            self.sync_sleep(date_with_time, force=is_today)
+            self.sync_activities(date_with_time, force=is_today)
+            self.sync_stress(date_with_time, force=is_today)
         
         self._update_sync_status('success')
         print(f"\n✅ Sync complete!")
