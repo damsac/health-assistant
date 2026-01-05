@@ -169,17 +169,26 @@ class GarminSync:
         value_str = str(value) if not isinstance(value, str) else value
         
         try:
-            # Check if metric already exists for this date
-            cursor.execute("""
-                SELECT id FROM health_metric 
-                WHERE user_id = %s AND metric_type = %s AND DATE(recorded_at) = %s
-                LIMIT 1
-            """, (self.user_id, metric_type, recorded_at.date()))
+            # Check if metric already exists for this date (unless forcing)
+            if not force:
+                cursor.execute("""
+                    SELECT id FROM health_metric 
+                    WHERE user_id = %s AND metric_type = %s AND DATE(recorded_at) = %s
+                    LIMIT 1
+                """, (self.user_id, metric_type, recorded_at.date()))
+                
+                if cursor.fetchone():
+                    print(f"    Skipping {metric_type}: already exists for {recorded_at.date()}")
+                    cursor.close()
+                    return
             
-            if cursor.fetchone():
-                print(f"    Skipping {metric_type}: already exists for {recorded_at.date()}")
-                cursor.close()
-                return
+            # If forcing, delete existing entry first
+            if force:
+                cursor.execute("""
+                    DELETE FROM health_metric 
+                    WHERE user_id = %s AND metric_type = %s AND DATE(recorded_at) = %s
+                """, (self.user_id, metric_type, recorded_at.date()))
+                print(f"    Deleted existing {metric_type} for {recorded_at.date()}")
             
             cursor.execute("""
                 INSERT INTO health_metric (user_id, metric_type, value, unit, recorded_at, metadata)
@@ -187,6 +196,7 @@ class GarminSync:
             """, (self.user_id, metric_type, value_str, unit, recorded_at, metadata))
             
             self.db_conn.commit()
+            print(f"    Stored {metric_type}: {value_str}")
         except Exception as e:
             print(f"    Warning: Could not store {metric_type}: {e}")
             self.db_conn.rollback()
