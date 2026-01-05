@@ -220,13 +220,19 @@ garmin.get('/metrics/summary', async (c) => {
 garmin.get('/metrics/latest', async (c) => {
   const session = c.get('session');
 
+  // Get the most recent metric for each type, excluding None values
   const latestMetrics = await db
     .select()
     .from(healthMetric)
-    .where(eq(healthMetric.userId, session.user.id))
-    .orderBy(desc(healthMetric.recordedAt))
-    .limit(50);
+    .where(
+      and(
+        eq(healthMetric.userId, session.user.id),
+        sql`${healthMetric.value} != 'None'`
+      )
+    )
+    .orderBy(desc(healthMetric.recordedAt));
 
+  // Group by metric type and keep only the latest (first after sorting)
   const grouped = latestMetrics.reduce(
     (acc, metric) => {
       if (!acc[metric.metricType]) {
