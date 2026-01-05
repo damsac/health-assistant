@@ -138,7 +138,7 @@ export function useSyncGarmin() {
 
   return useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/garmin/sync', {
+      const response = await fetch('/garmin/sync', {
         method: 'POST',
         credentials: 'include',
       });
