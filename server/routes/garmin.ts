@@ -127,7 +127,7 @@ garmin.post('/sync', async (c) => {
   }
 
   const pythonPath = `${process.cwd()}/python-services`;
-  const command = `cd ${pythonPath} && .venv/bin/python3 garmin_sync.py "${session.user.id}" "${connection.garminEmail}" "${connection.garminPassword}" 3`;
+  const command = `cd ${pythonPath} && .venv/bin/python3 garmin_sync.py "${session.user.id}" "${connection.garminEmail}" "${connection.garminPassword}" 1`;
 
   try {
     await execAsync(command);

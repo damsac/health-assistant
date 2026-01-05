@@ -75,7 +75,7 @@ export function useDisconnectGarmin() {
 
   return useMutation({
     mutationFn: async () => {
-      const response = await fetch('http://localhost:4000/garmin/disconnect', {
+      const response = await fetch('http://localhost:4000/garmin/connection', {
         method: 'DELETE',
         credentials: 'include',
       });

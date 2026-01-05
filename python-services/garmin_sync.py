@@ -198,11 +198,13 @@ class GarminSync:
             date = today - timedelta(days=i)
             print(f"\n📅 {date.strftime('%Y-%m-%d')} ({i} days ago)")
             
-            self.sync_daily_summary(date)
-            self.sync_heart_rate(date)
-            self.sync_sleep(date)
-            self.sync_activities(date)
-            self.sync_stress(date)
+            # Force refresh today's data
+            is_today = date == today
+            self.sync_daily_summary(date, force=is_today)
+            self.sync_heart_rate(date, force=is_today)
+            self.sync_sleep(date, force=is_today)
+            self.sync_activities(date, force=is_today)
+            self.sync_stress(date, force=is_today)
         
         self._update_sync_status('success')
         print(f"\n✅ Sync complete!")
