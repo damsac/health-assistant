@@ -179,9 +179,11 @@ class GarminSync:
             if isinstance(recorded_at, str):
                 recorded_dt = datetime.fromisoformat(recorded_at)
             elif hasattr(recorded_at, 'date'):
+                # If it's already a datetime, use it as is
                 recorded_dt = recorded_at
             else:
-                recorded_dt = datetime.combine(recorded_at, datetime.min.time()).replace(tzinfo=timezone.utc)
+                # If it's a date, convert to datetime at noon local time
+                recorded_dt = datetime.combine(recorded_at, datetime.min.time().replace(hour=12))
             
             # Check if metric already exists for this date (unless forcing)
             if not force:
@@ -219,37 +221,19 @@ class GarminSync:
     
     def sync_last_n_days(self, days=7, force=False):
         """Sync data for the last N days"""
-        # Try both today and yesterday to catch data in different timezones
-        local_today = datetime.now().date()
-        utc_today = datetime.now(timezone.utc).date()
+        # Use local date (not UTC) to match Garmin's date system
+        today = datetime.now().date()
         
-        print(f"\n📊 Syncing last {days} days of Garmin data...")
-        print(f"   Local date: {local_today}")
-        print(f"   UTC date: {utc_today}")
+        print(f"\n📊 Syncing last {days} days of Garmin data (Local date: {today})...")
         print("=" * 50)
         
-        # Create a list of dates to try, starting with both today dates
-        dates_to_check = [local_today]
-        if utc_today != local_today:
-            dates_to_check.append(utc_today)
-        
-        # Add previous days
-        for i in range(1, days):
-            dates_to_check.append(local_today - timedelta(days=i))
-        
-        # Remove duplicates while preserving order
-        seen = set()
-        unique_dates = []
-        for date in dates_to_check:
-            if date not in seen:
-                seen.add(date)
-                unique_dates.append(date)
-        
-        for i, date in enumerate(unique_dates[:days]):
+        # Sync dates starting from today
+        for i in range(days):
+            date = today - timedelta(days=i)
             print(f"\n📅 {date.strftime('%Y-%m-%d')} ({i} days ago)")
             
-            # Force refresh for today's dates
-            is_today = date in [local_today, utc_today]
+            # Force refresh today's data
+            is_today = date == today
             self.sync_daily_summary(date, force=is_today)
             self.sync_heart_rate(date, force=is_today)
             self.sync_sleep(date, force=is_today)
