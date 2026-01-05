@@ -31,21 +31,27 @@ class GarminSync:
     def sync_daily_summary(self, date, force=False):
         """Fetch and store daily summary data"""
         try:
+            print(f"    Fetching daily summary for {date.isoformat()} (force={force})")
             summary = self.client.get_stats(date.isoformat())
             
             if 'totalSteps' in summary:
+                print(f"    Found steps: {summary['totalSteps']}")
                 self._store_metric('steps', summary['totalSteps'], 'steps', date, force=force)
             
             if 'totalKilocalories' in summary:
+                print(f"    Found calories: {summary['totalKilocalories']}")
                 self._store_metric('calories', summary['totalKilocalories'], 'kcal', date, force=force)
             
             if 'totalDistanceMeters' in summary:
+                print(f"    Found distance: {summary['totalDistanceMeters']}")
                 self._store_metric('distance', summary['totalDistanceMeters'], 'meters', date, force=force)
             
             if 'moderateIntensityMinutes' in summary:
+                print(f"    Found active minutes: {summary['moderateIntensityMinutes']}")
                 self._store_metric('active_minutes', summary['moderateIntensityMinutes'], 'minutes', date, force=force)
             
             if 'vigorousIntensityMinutes' in summary:
+                print(f"    Found vigorous minutes: {summary['vigorousIntensityMinutes']}")
                 self._store_metric('vigorous_minutes', summary['vigorousIntensityMinutes'], 'minutes', date, force=force)
                 
             print(f"  ✓ Daily summary synced")
