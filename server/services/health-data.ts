@@ -73,12 +73,6 @@ export async function getLatestHealthData(
   summary.deepSleep = parseMetricFloat(metricMap.get('deep_sleep'));
   summary.lightSleep = parseMetricFloat(metricMap.get('light_sleep'));
   summary.remSleep = parseMetricFloat(metricMap.get('rem_sleep'));
-  summary.activeMinutes = parseMetricFloat(metricMap.get('active_minutes'));
-  summary.vigorousMinutes = parseMetricFloat(metricMap.get('vigorous_minutes'));
-  summary.stressAvg = parseMetricFloat(metricMap.get('stress_avg'));
-  summary.stressMax = parseMetricFloat(metricMap.get('stress_max'));
-
-  console.log('Health data summary:', summary);
 
   return summary;
 }
