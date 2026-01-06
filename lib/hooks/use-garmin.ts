@@ -1,3 +1,13 @@
+/**
+ * React Query hooks for Garmin Connect API integration
+ * 
+ * Provides hooks for:
+ * - Connecting/disconnecting Garmin accounts
+ * - Fetching health metrics
+ * - Triggering manual data sync
+ * 
+ * All hooks use port 4000 for API calls
+ */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 type GarminConnection = {
@@ -23,6 +33,10 @@ type HealthMetric = {
   createdAt: string;
 };
 
+/**
+ * Hook to manage Garmin connection status
+ * @returns Query result with connection details or null if not connected
+ */
 export function useGarminConnection() {
   return useQuery({
     queryKey: ['garmin', 'connection'],
@@ -38,6 +52,14 @@ export function useGarminConnection() {
   });
 }
 
+/**
+ * Hook to connect a Garmin account
+ * Stores credentials securely in the database
+ * @param {Object} options - Connection options
+ * @param {string} options.garminEmail - Garmin email address
+ * @param {string} options.garminPassword - Garmin password
+ * @returns Mutation object for connecting Garmin account
+ */
 export function useConnectGarmin() {
   const queryClient = useQueryClient();
 
@@ -70,6 +92,11 @@ export function useConnectGarmin() {
   });
 }
 
+/**
+ * Hook to disconnect Garmin account
+ * Removes credentials and revokes access
+ * @returns Mutation object for disconnecting Garmin account
+ */
 export function useDisconnectGarmin() {
   const queryClient = useQueryClient();
 
@@ -92,6 +119,13 @@ export function useDisconnectGarmin() {
   });
 }
 
+/**
+ * Hook to fetch health metrics from Garmin
+ * Returns all available metrics for the user
+ * @param {string} [metricType] - Optional metric type filter
+ * @param {number} [days=7] - Number of days to fetch metrics for
+ * @returns Query result with health metrics array
+ */
 export function useHealthMetrics(metricType?: string, days = 7) {
   return useQuery({
     queryKey: ['garmin', 'metrics', metricType, days],
@@ -114,6 +148,12 @@ export function useHealthMetrics(metricType?: string, days = 7) {
   });
 }
 
+/**
+ * Hook to get aggregated health data summary
+ * Returns processed metrics suitable for AI consultation
+ * @param {number} [days=7] - Number of days to fetch summary for
+ * @returns Query result with health data summary
+ */
 export function useHealthMetricsSummary(days = 7) {
   return useQuery({
     queryKey: ['garmin', 'metrics', 'summary', days],
@@ -133,6 +173,11 @@ export function useHealthMetricsSummary(days = 7) {
   });
 }
 
+/**
+ * Hook to trigger manual Garmin data sync
+ * Forces refresh of today's data and syncs last 7 days
+ * @returns Mutation object for triggering sync
+ */
 export function useSyncGarmin() {
   const queryClient = useQueryClient();
 

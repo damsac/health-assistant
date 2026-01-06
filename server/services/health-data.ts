@@ -1,7 +1,24 @@
 import { desc, eq } from 'drizzle-orm';
+/**
+ * Health data processing service
+ * 
+ * This service processes raw health metrics from the database
+ * and converts them into structured summaries suitable for
+ * AI consultation and display purposes.
+ * 
+ * Main functions:
+ * - getLatestHealthData: Get the most recent health metrics for a user
+ * - getHealthDataForDays: Get daily summaries for multiple days
+ * - parseMetricFloat: Safely parse metric values to floats
+ */
 import { db, healthMetric } from '../../lib/db';
 
-export type HealthDataSummary = {
+/**
+ * Health data summary interface
+ * 
+ * Contains aggregated health metrics for a specific date range
+ */
+export interface HealthDataSummary {
   steps?: number;
   calories?: number;
   distance?: number;
@@ -21,6 +38,9 @@ export type HealthDataSummary = {
 
 /**
  * Fetch the most recent health metrics for a user
+ * 
+ * @param userId - User identifier
+ * @returns Promise<HealthDataSummary> - Most recent health metrics
  */
 export async function getLatestHealthData(
   userId: string,
@@ -54,6 +74,12 @@ export async function getLatestHealthData(
   }
 
   // Parse values
+  /**
+   * Safely parse a metric value to a float
+   * 
+   * @param value - String value to parse
+   * @returns number | undefined - Parsed float or undefined if invalid
+   */
   const parseMetricFloat = (value: string | undefined): number | undefined => {
     if (!value) return undefined;
     const parsed = Number.parseFloat(value);
@@ -79,6 +105,13 @@ export async function getLatestHealthData(
 
 /**
  * Get health data for the last N days
+ */
+/**
+ * Get health data for the last N days grouped by day
+ * 
+ * @param userId - User identifier
+ * @param days - Number of days to fetch (default: 7)
+ * @returns Promise<HealthDataSummary[]> - Array of daily summaries
  */
 export async function getHealthDataForDays(
   userId: string,

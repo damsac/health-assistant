@@ -1,6 +1,16 @@
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
+/**
+ * Garmin Connect integration routes
+ * 
+ * Provides endpoints for:
+ * - Connecting/disconnecting Garmin accounts
+ * - Syncing health data from Garmin Connect
+ * - Fetching health metrics and summaries
+ * 
+ * All routes require authentication
+ */
 import { Hono } from 'hono';
 import { db, garminConnection, healthMetric } from '@/lib/db';
 import { type AuthEnv, authMiddleware } from '../middleware/auth';
@@ -10,6 +20,18 @@ const garmin = new Hono<AuthEnv>();
 
 garmin.use('*', authMiddleware);
 
+/**
+ * POST /garmin/connect
+ * Connect a Garmin account by storing credentials
+ * 
+ * Request Body:
+ * - garminEmail: Garmin account email
+ * - garminPassword: Garmin account password
+ * 
+ * Response:
+ * - success: boolean
+ * - message: string
+ */
 garmin.post('/connect', async (c) => {
   const session = c.get('session');
   const { garminEmail, garminPassword } = await c.req.json();
@@ -93,7 +115,15 @@ garmin.get('/connection', async (c) => {
   return c.json(connection || null);
 });
 
-garmin.delete('/connection', async (c) => {
+/**
+ * DELETE /garmin/disconnect
+ * Disconnect Garmin account and remove credentials
+ * 
+ * Response:
+ * - success: boolean
+ * - message: string
+ */
+garmin.delete('/disconnect', async (c) => {
   const session = c.get('session');
 
   await db
@@ -107,6 +137,19 @@ garmin.delete('/connection', async (c) => {
   return c.json({ success: true, message: 'Garmin disconnected successfully' });
 });
 
+/**
+ * POST /garmin/sync
+ * Trigger manual sync of Garmin data
+ * 
+ * Executes Python script to:
+ * - Authenticate with Garmin Connect
+ * - Fetch last 7 days of health data
+ * - Force refresh today's data
+ * 
+ * Response:
+ * - success: boolean
+ * - message: string
+ */
 garmin.post('/sync', async (c) => {
   const session = c.get('session');
 
@@ -164,6 +207,18 @@ garmin.post('/sync', async (c) => {
   }
 });
 
+/**
+ * GET /garmin/metrics
+ * Fetch health metrics with optional filtering
+ * 
+ * Query Parameters:
+ * - type: (optional) Filter by metric type
+ * - days: Number of days to fetch (default: 7)
+ * - startDate: (optional) ISO date string
+ * - endDate: (optional) ISO date string
+ * 
+ * Response: Array of HealthMetric objects
+ */
 garmin.get('/metrics', async (c) => {
   const session = c.get('session');
   const metricType = c.req.query('type');
@@ -190,6 +245,15 @@ garmin.get('/metrics', async (c) => {
   return c.json(metrics);
 });
 
+/**
+ * GET /garmin/metrics/summary
+ * Get aggregated health data summary
+ * 
+ * Query Parameters:
+ * - days: Number of days to summarize (default: 7)
+ * 
+ * Response: HealthDataSummary object with aggregated metrics
+ */
 garmin.get('/metrics/summary', async (c) => {
   const session = c.get('session');
   const days = parseInt(c.req.query('days') || '7', 10);
@@ -217,6 +281,16 @@ garmin.get('/metrics/summary', async (c) => {
   return c.json(summaryQuery);
 });
 
+/**
+ * GET /garmin/metrics/latest
+ * Fetch latest health metrics for the user
+ * 
+ * Query Parameters:
+ * - type: (optional) Filter by metric type
+ * - limit: (optional) Number of metrics to return
+ * 
+ * Response: Array of HealthMetric objects
+ */
 garmin.get('/metrics/latest', async (c) => {
   const session = c.get('session');
 

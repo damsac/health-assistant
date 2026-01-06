@@ -1,3 +1,12 @@
+/**
+ * Garmin Integration Page
+ * 
+ * This component handles the entire Garmin Connect integration UI including:
+ * - Connection form for Garmin credentials
+ * - Display of synced health metrics
+ * - Manual refresh functionality
+ * - Error handling and loading states
+ */
 import { useState } from 'react';
 import { ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -67,6 +76,10 @@ export default function GarminPage() {
     }
   };
 
+  /**
+   * Handle manual Garmin data refresh
+   * Triggers the sync mutation and invalidates relevant queries
+   */
   const handleRefresh = async () => {
     try {
       await syncMutation.mutateAsync();
@@ -78,10 +91,23 @@ export default function GarminPage() {
     }
   };
 
+  /**
+   * Format date string for display
+   * Converts ISO date to local date string
+   */
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString();
   };
 
+  /**
+   * Format metric value for display
+   * Handles special formatting for activity data (JSON)
+ * 
+   * @param value - Raw metric value
+   * @param unit - Unit of measurement
+   * @param metricType - Type of metric for special handling
+   * @returns Formatted display value
+   */
   const formatMetricValue = (value: string, unit: string | null, metricType: string) => {
     try {
       // Handle activity JSON specially

@@ -1,5 +1,30 @@
 #!/usr/bin/env python3
-# Note: Run with .venv/bin/python3 to use virtual environment
+"""
+Garmin Connect Data Sync Script
+
+This script fetches health data from Garmin Connect and stores it in PostgreSQL.
+It supports syncing multiple data types:
+- Daily summary (steps, calories, distance, active minutes)
+- Heart rate data (resting, min, max)
+- Sleep data (duration, phases)
+- Activities (workouts with details)
+- Stress data (average, maximum)
+
+Usage:
+  python garmin_sync.py <user_id> <email> <password> [days]
+  
+Arguments:
+  user_id: User identifier for database storage
+  email: Garmin Connect email
+  password: Garmin Connect password
+  days: Number of days to sync (default: 7)
+
+Features:
+- Force refresh capability to overwrite existing data
+- Proper timezone handling
+- Skip None values to avoid empty data
+- Comprehensive error handling
+"""
 import os
 import json
 import sys
@@ -11,14 +36,34 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class GarminSync:
+    """
+    Garmin Connect synchronization client.
+    
+    Handles authentication, data fetching, and storage of health metrics
+    from Garmin Connect to PostgreSQL database.
+    """
+    
     def __init__(self, user_id, garmin_email, garmin_password):
+        """
+        Initialize the Garmin Sync client.
+        
+        Args:
+            user_id (str): User identifier for database storage
+            garmin_email (str): Garmin Connect email
+            garmin_password (str): Garmin Connect password
+        """
         self.user_id = user_id
         self.garmin_email = garmin_email
         self.client = Garmin(garmin_email, garmin_password)
         self.db_conn = psycopg2.connect(os.getenv('DATABASE_URL'))
         
     def login(self):
-        """Authenticate with Garmin Connect"""
+        """
+        Authenticate with Garmin Connect.
+        
+        Returns:
+            bool: True if authentication successful, False otherwise
+        """
         try:
             self.client.login()
             print(f"✓ Successfully logged in as {self.garmin_email}")
@@ -29,7 +74,16 @@ class GarminSync:
             return False
     
     def sync_daily_summary(self, date, force=False):
-        """Fetch and store daily summary data"""
+        """
+        Fetch and store daily summary data for a specific date.
+        
+        Args:
+            date: Date object for the day to sync
+            force: If True, overwrite existing data
+            
+        Returns:
+            bool: True if sync successful, False otherwise
+        """
         try:
             date_str = date.strftime('%Y-%m-%d') if hasattr(date, 'strftime') else date.isoformat()
             print(f"    Fetching daily summary for {date_str} (force={force})")
@@ -164,7 +218,23 @@ class GarminSync:
             return False
     
     def _store_metric(self, metric_type, value, unit, recorded_at, metadata=None, force=False):
-        """Store a health metric in the database"""
+        """
+        Store a health metric in the database.
+        
+        Args:
+            metric_type: Type of metric (e.g., 'steps', 'calories')
+            value: Metric value (will be converted to string)
+            unit: Unit of measurement (optional)
+            recorded_at: Date/datetime for the metric
+            metadata: Additional JSON metadata (optional)
+            force: If True, overwrite existing data
+            
+        This method:
+        1. Skips None values to avoid empty data
+        2. Checks for existing data (unless forcing)
+        3. Deletes existing data if forcing
+        4. Inserts new metric record
+        """
         # Skip None values
         if value is None:
             print(f"    Skipping {metric_type}: value is None")
@@ -220,8 +290,20 @@ class GarminSync:
             cursor.close()
     
     def sync_last_n_days(self, days=7, force=False):
-        """Sync data for the last N days"""
-        # Use local date (not UTC) to match Garmin's date system
+        """
+        Sync data for the last N days from Garmin Connect.
+        
+        Args:
+            days: Number of days to sync (default: 7)
+            force: If True, force refresh today's data
+            
+        This method:
+        1. Determines the date range to sync
+        2. For each date, fetches all available data types
+        3. Stores data with proper timestamps
+        4. Updates sync status in database
+        """
+        # Use local date to match Garmin's date system
         today = datetime.now().date()
         
         print(f"\n📊 Syncing last {days} days of Garmin data (Local date: {today})...")
@@ -244,7 +326,13 @@ class GarminSync:
         print(f"\n✅ Sync complete!")
     
     def _update_sync_status(self, status, error=None):
-        """Update the sync status in garmin_connection table"""
+        """
+        Update the sync status in garmin_connection table.
+        
+        Args:
+            status: 'success' or 'error'
+            error: Error message if status is 'error'
+        """
         cursor = self.db_conn.cursor()
         try:
             cursor.execute("""
