@@ -1,0 +1,1 @@
+ALTER TABLE "garmin_connection" ADD COLUMN "garmin_password" text NOT NULL;

@@ -20,6 +20,9 @@
             biome
             git
             watchman
+            docker
+            python311
+            python311Packages.pip
           ];
 
           env = {
