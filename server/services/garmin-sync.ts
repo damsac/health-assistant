@@ -295,7 +295,7 @@ export class GarminSyncService {
           where: and(
             eq(healthMetric.userId, this.userId),
             eq(healthMetric.metricType, metricType),
-            sql`DATE(${healthMetric.recordedAt}) = DATE(${recordedDate})`,
+            sql`DATE(${healthMetric.recordedAt}) = DATE(${recordedDate.toISOString()})`,
           ),
         });
 
@@ -313,7 +313,7 @@ export class GarminSyncService {
             and(
               eq(healthMetric.userId, this.userId),
               eq(healthMetric.metricType, metricType),
-              sql`DATE(${healthMetric.recordedAt}) = DATE(${recordedDate})`,
+              sql`DATE(${healthMetric.recordedAt}) = DATE(${recordedDate.toISOString()})`,
             ),
           );
         console.log(`    Deleted existing ${metricType}`);
