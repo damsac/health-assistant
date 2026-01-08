@@ -2,15 +2,17 @@ import { desc, eq } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { db } from '@/lib/db';
 import { garminConnection, healthMetric } from '@/lib/db/schema';
+import { type AuthEnv, authMiddleware } from '../middleware/auth';
 import { createGarminClient } from '../services/garmin-sync';
 
-const garmin = new Hono();
+const garmin = new Hono<AuthEnv>();
+
+// Apply auth middleware to all routes
+garmin.use('*', authMiddleware);
 
 garmin.get('/connection', async (c) => {
-  const userId = c.req.header('x-user-id');
-  if (!userId) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  const session = c.get('session');
+  const userId = session.user.id;
 
   const connection = await db.query.garminConnection.findFirst({
     where: eq(garminConnection.userId, userId),
@@ -24,10 +26,8 @@ garmin.get('/connection', async (c) => {
 });
 
 garmin.post('/connect', async (c) => {
-  const userId = c.req.header('x-user-id');
-  if (!userId) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  const session = c.get('session');
+  const userId = session.user.id;
 
   const { email, password } = await c.req.json();
 
@@ -74,10 +74,8 @@ garmin.post('/connect', async (c) => {
 });
 
 garmin.post('/disconnect', async (c) => {
-  const userId = c.req.header('x-user-id');
-  if (!userId) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  const session = c.get('session');
+  const userId = session.user.id;
 
   await db.delete(garminConnection).where(eq(garminConnection.userId, userId));
 
@@ -85,10 +83,8 @@ garmin.post('/disconnect', async (c) => {
 });
 
 garmin.post('/sync', async (c) => {
-  const userId = c.req.header('x-user-id');
-  if (!userId) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  const session = c.get('session');
+  const userId = session.user.id;
 
   const connection = await db.query.garminConnection.findFirst({
     where: eq(garminConnection.userId, userId),
@@ -118,10 +114,8 @@ garmin.post('/sync', async (c) => {
 });
 
 garmin.get('/metrics/latest', async (c) => {
-  const userId = c.req.header('x-user-id');
-  if (!userId) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  const session = c.get('session');
+  const userId = session.user.id;
 
   const metrics = await db.query.healthMetric.findMany({
     where: eq(healthMetric.userId, userId),
@@ -141,10 +135,8 @@ garmin.get('/metrics/latest', async (c) => {
 });
 
 garmin.get('/metrics', async (c) => {
-  const userId = c.req.header('x-user-id');
-  if (!userId) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  const session = c.get('session');
+  const userId = session.user.id;
 
   const type = c.req.query('type');
   const days = parseInt(c.req.query('days') || '30', 10);
@@ -171,10 +163,8 @@ garmin.get('/metrics', async (c) => {
 });
 
 garmin.get('/metrics/summary', async (c) => {
-  const userId = c.req.header('x-user-id');
-  if (!userId) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  const session = c.get('session');
+  const userId = session.user.id;
 
   const days = parseInt(c.req.query('days') || '30', 10);
 
