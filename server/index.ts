@@ -4,7 +4,6 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import type { AuthEnv } from './middleware/auth';
 import { chatRoute } from './routes/chat';
-import { garminRoute } from './routes/garmin';
 
 const app = new Hono<AuthEnv>();
 
@@ -27,7 +26,6 @@ app.get('/health', (c) => c.json({ status: 'ok' }));
 
 // Routes
 app.route('/chat', chatRoute);
-app.route('/garmin', garminRoute);
 
 const port = 4000;
 

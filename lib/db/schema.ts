@@ -138,7 +138,7 @@ export const message = pgTable(
   (table) => [index('idx_message_conversation_id').on(table.conversationId)],
 );
 
-// Garmin connection - stores user's Garmin Connect credentials and sync status
+// Garmin connection - stores user's Garmin Connect OAuth tokens and sync status
 export const garminConnection = pgTable(
   'garmin_connection',
   {
@@ -148,7 +148,8 @@ export const garminConnection = pgTable(
       .unique()
       .references(() => user.id, { onDelete: 'cascade' }),
     garminEmail: text('garmin_email').notNull(),
-    garminPassword: text('garmin_password').notNull(),
+    oauth1Token: text('oauth1_token'), // Stores OAuth1 token as JSON string
+    oauth2Token: text('oauth2_token'), // Stores OAuth2 token as JSON string
     isActive: boolean('is_active').notNull().default(true),
     lastSyncAt: timestamp('last_sync_at'),
     lastSyncStatus: text('last_sync_status'),

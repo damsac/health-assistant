@@ -1,26 +1,24 @@
 /**
  * React Query hooks for Garmin Connect API integration
- * 
+ *
  * Provides hooks for:
  * - Connecting/disconnecting Garmin accounts
  * - Fetching health metrics
  * - Triggering manual data sync
- * 
+ *
  * All hooks use port 4000 for API calls
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  type GarminConnectionResponse,
-  type ConnectGarminRequest,
-  type ConnectGarminResponse,
-  type DisconnectGarminResponse,
-  type SyncGarminResponse,
-  type GetMetricsRequest,
-  type GetMetricsResponse,
-  type GetMetricsLatestResponse,
-  type GetMetricsSummaryRequest,
-  type GetMetricsSummaryResponse,
-  type HealthMetricResponse,
+import type {
+  ConnectGarminRequest,
+  ConnectGarminResponse,
+  DisconnectGarminResponse,
+  GarminConnectionResponse,
+  GetMetricsLatestResponse,
+  GetMetricsResponse,
+  GetMetricsSummaryResponse,
+  HealthMetricResponse,
+  SyncGarminResponse,
 } from '@/lib/api/garmin';
 
 // Re-export types from the API for convenience
@@ -42,7 +40,7 @@ export function useGarminConnection() {
   return useQuery<GarminConnectionResponse | null>({
     queryKey: ['garmin', 'connection'],
     queryFn: async () => {
-      const response = await fetch('http://localhost:4000/garmin/connection', {
+      const response = await fetch('/api/garmin/connection', {
         credentials: 'include',
       });
       if (!response.ok) {
@@ -69,7 +67,7 @@ export function useConnectGarmin() {
       garminEmail: string;
       garminPassword: string;
     }) => {
-      const response = await fetch('http://localhost:4000/garmin/connect', {
+      const response = await fetch('/api/garmin/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ garminEmail, garminPassword }),
@@ -100,7 +98,7 @@ export function useDisconnectGarmin() {
 
   return useMutation<DisconnectGarminResponse, Error, void>({
     mutationFn: async () => {
-      const response = await fetch('http://localhost:4000/garmin/connection', {
+      const response = await fetch('/api/garmin/disconnect', {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -126,9 +124,12 @@ export function useGarminMetrics() {
   return useQuery<GetMetricsLatestResponse, Error>({
     queryKey: ['garmin', 'metrics', 'latest'],
     queryFn: async () => {
-      const response = await fetch('http://localhost:4000/garmin/metrics/latest', {
-        credentials: 'include',
-      });
+      const response = await fetch(
+        'http://localhost:4000/garmin/metrics/latest',
+        {
+          credentials: 'include',
+        },
+      );
 
       if (!response.ok) {
         throw new Error('Failed to fetch latest health metrics');
@@ -147,7 +148,11 @@ export function useGarminMetrics() {
  * @returns Query result with health metrics array
  */
 export function useHealthMetrics(metricType?: string, days = 7) {
-  return useQuery<GetMetricsResponse, Error, [string, string | undefined, number]>({
+  return useQuery<
+    GetMetricsResponse,
+    Error,
+    [string, string | undefined, number]
+  >({
     queryKey: ['garmin', 'metrics', metricType, days],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -155,7 +160,7 @@ export function useHealthMetrics(metricType?: string, days = 7) {
         ...(metricType && { type: metricType }),
       });
 
-      const response = await fetch(`http://localhost:4000/garmin/metrics?${params}`, {
+      const response = await fetch(`/api/garmin/metrics?${params}`, {
         credentials: 'include',
       });
 
@@ -180,7 +185,7 @@ export function useHealthMetricsSummary(days = 7) {
     queryFn: async () => {
       const params = new URLSearchParams({ days: days.toString() });
 
-      const response = await fetch(`http://localhost:4000/garmin/metrics/summary?${params}`, {
+      const response = await fetch(`/api/garmin/metrics/summary?${params}`, {
         credentials: 'include',
       });
 
@@ -203,7 +208,7 @@ export function useSyncGarmin() {
 
   return useMutation<SyncGarminResponse, Error, void>({
     mutationFn: async () => {
-      const response = await fetch('http://localhost:4000/garmin/sync', {
+      const response = await fetch('/api/garmin/sync', {
         method: 'POST',
         credentials: 'include',
       });
@@ -218,23 +223,6 @@ export function useSyncGarmin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['garmin', 'connection'] });
       queryClient.invalidateQueries({ queryKey: ['garmin', 'metrics'] });
-    },
-  });
-}
-
-export function useLatestHealthMetrics() {
-  return useQuery({
-    queryKey: ['garmin', 'metrics', 'latest'],
-    queryFn: async () => {
-      const response = await fetch('http://localhost:4000/garmin/metrics/latest', {
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch latest health metrics');
-      }
-
-      return response.json() as Promise<GetMetricsResponse>;
     },
   });
 }
