@@ -94,10 +94,12 @@ export default function GarminPage() {
 
   /**
    * Format date string for display
-   * Converts ISO date to local date string
+   * Converts ISO date or Date object to local date string
    */
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
+  const formatDate = (date: string | Date | null) => {
+    if (!date) return 'Never';
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleString();
   };
 
   /**

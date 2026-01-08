@@ -163,7 +163,7 @@ export function useHealthMetrics(metricType?: string, days = 7) {
         throw new Error('Failed to fetch health metrics');
       }
 
-      return response.json() as Promise<HealthMetric[]>;
+      return response.json() as Promise<GetMetricsResponse>;
     },
   });
 }
@@ -234,7 +234,7 @@ export function useLatestHealthMetrics() {
         throw new Error('Failed to fetch latest health metrics');
       }
 
-      return response.json() as Promise<HealthMetric[]>;
+      return response.json() as Promise<GetMetricsResponse>;
     },
   });
 }
