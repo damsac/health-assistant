@@ -42,7 +42,7 @@ export function useGarminConnection() {
   return useQuery<GarminConnectionResponse | null>({
     queryKey: ['garmin', 'connection'],
     queryFn: async () => {
-      const response = await fetch('/api/garmin/connection', {
+      const response = await fetch('http://localhost:4000/garmin/connection', {
         credentials: 'include',
       });
       if (!response.ok) {
