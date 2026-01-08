@@ -1,12 +1,14 @@
 /**
  * Garmin Integration Page
- * 
+ *
  * This component handles the entire Garmin Connect integration UI including:
  * - Connection form for Garmin credentials
  * - Display of synced health metrics
  * - Manual refresh functionality
  * - Error handling and loading states
  */
+
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,7 +16,6 @@ import {
   Button,
   Card,
   H1,
-  H2,
   Input,
   Spinner,
   Text,
@@ -25,24 +26,19 @@ import {
   useConnectGarmin,
   useDisconnectGarmin,
   useGarminConnection,
-  useGarminMetrics,
-  useSyncGarmin,
-  type HealthMetricResponse,
 } from '@/lib/hooks/use-garmin';
 
 export default function GarminPage() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showForm, setShowForm] = useState(false);
 
   const { data: connection, isLoading: connectionLoading } =
     useGarminConnection();
-  const { data: latestMetrics, isLoading: metricsLoading } =
-    useGarminMetrics();
   const connectMutation = useConnectGarmin();
   const disconnectMutation = useDisconnectGarmin();
-  const syncMutation = useSyncGarmin();
 
   const handleConnect = async () => {
     if (!email || !password) {
@@ -58,7 +54,10 @@ export default function GarminPage() {
       setEmail('');
       setPassword('');
       setShowForm(false);
-      alert('Garmin connected successfully! Data sync started in background.');
+      alert(
+        'Garmin connected successfully! Redirecting to your health stats...',
+      );
+      router.push('/(app)/health-stats' as any);
     } catch (error) {
       alert(
         error instanceof Error ? error.message : 'Failed to connect Garmin',
@@ -75,69 +74,6 @@ export default function GarminPage() {
         alert('Failed to disconnect Garmin');
       }
     }
-  };
-
-  /**
-   * Handle manual Garmin data refresh
-   * Triggers the sync mutation and invalidates relevant queries
-   */
-  const handleRefresh = async () => {
-    try {
-      await syncMutation.mutateAsync();
-      alert('Garmin data refreshed successfully!');
-    } catch (error) {
-      alert(
-        error instanceof Error ? error.message : 'Failed to refresh Garmin data',
-      );
-    }
-  };
-
-  /**
-   * Format date string for display
-   * Converts ISO date or Date object to local date string
-   */
-  const formatDate = (date: string | Date | null) => {
-    if (!date) return 'Never';
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return dateObj.toLocaleString();
-  };
-
-  /**
-   * Format metric value for display
-   * Handles special formatting for activity data (JSON)
- * 
-   * @param value - Raw metric value
-   * @param unit - Unit of measurement
-   * @param metricType - Type of metric for special handling
-   * @returns Formatted display value
-   */
-  const formatMetricValue = (value: string, unit: string | null, metricType: string) => {
-    try {
-      // Handle activity JSON specially
-      if (metricType === 'activity' && value.startsWith('{')) {
-        const activity = JSON.parse(value);
-        return (
-          <YStack alignItems="flex-end" gap="$1">
-            <Text fontSize="$6" fontWeight="bold">
-              {activity.activityName || 'Unknown Activity'}
-            </Text>
-            <Text fontSize="$3" opacity={0.7}>
-              {activity.duration ? `${Math.round(activity.duration / 60)} min` : ''}
-              {activity.distance ? ` • ${Math.round(activity.distance / 1000 * 10) / 10} km` : ''}
-              {activity.calories ? ` • ${activity.calories} cal` : ''}
-            </Text>
-          </YStack>
-        );
-      }
-      
-      const numValue = parseFloat(value);
-      if (!Number.isNaN(numValue)) {
-        return `${numValue.toFixed(1)} ${unit || ''}`;
-      }
-    } catch {
-      // If parsing fails, return as is
-    }
-    return value;
   };
 
   if (connectionLoading) {
@@ -164,46 +100,23 @@ export default function GarminPage() {
             <YStack gap="$3">
               <XStack justifyContent="space-between" alignItems="center">
                 <YStack>
-                  <Text fontWeight="bold">Connected Account</Text>
+                  <Text fontWeight="bold">✓ Garmin Connected</Text>
                   <Text opacity={0.7}>{connection.garminEmail}</Text>
                 </YStack>
-                <XStack gap="$2">
-                  <Button
-                    size="$3"
-                    theme="green"
-                    onPress={handleRefresh}
-                    disabled={syncMutation.isPending}
-                  >
-                    {syncMutation.isPending ? <Spinner size="small" /> : 'Refresh Data'}
-                  </Button>
-                  <Button
-                    size="$3"
-                    theme="red"
-                    onPress={handleDisconnect}
-                    disabled={disconnectMutation.isPending}
-                  >
-                    {disconnectMutation.isPending
-                      ? 'Disconnecting...'
-                      : 'Disconnect'}
-                  </Button>
-                </XStack>
+                <Button
+                  size="$3"
+                  theme="red"
+                  onPress={handleDisconnect}
+                  disabled={disconnectMutation.isPending}
+                >
+                  {disconnectMutation.isPending
+                    ? 'Disconnecting...'
+                    : 'Disconnect'}
+                </Button>
               </XStack>
-
-              {connection.lastSyncAt && (
-                <YStack gap="$2">
-                  <Text fontSize="$2" opacity={0.7}>
-                    Last Sync: {formatDate(connection.lastSyncAt)}
-                  </Text>
-                  {connection.lastSyncStatus === 'success' && (
-                    <Text fontSize="$2">✓ Sync successful</Text>
-                  )}
-                  {connection.lastSyncStatus === 'error' && (
-                    <Text fontSize="$2">
-                      ✗ Sync failed: {connection.lastSyncError}
-                    </Text>
-                  )}
-                </YStack>
-              )}
+              <Button onPress={() => router.push('/(app)/health-stats' as any)}>
+                View Health Stats
+              </Button>
             </YStack>
           </Card>
         ) : (
@@ -256,54 +169,6 @@ export default function GarminPage() {
               )}
             </YStack>
           </Card>
-        )}
-
-        {connection?.isActive && (
-          <>
-            <H2>Latest Health Data</H2>
-
-            {metricsLoading ? (
-              <Card padding="$4">
-                <XStack justifyContent="center">
-                  <Spinner />
-                </XStack>
-              </Card>
-            ) : latestMetrics && latestMetrics.length > 0 ? (
-              <YStack gap="$3">
-                {latestMetrics
-                  .filter(
-                    (metric) => metric.metricType !== 'heart_rate_detailed',
-                  )
-                  .map((metric: HealthMetricResponse) => (
-                    <Card key={metric.id} padding="$3">
-                      <XStack
-                        justifyContent="space-between"
-                        alignItems="center"
-                      >
-                        <YStack>
-                          <Text fontWeight="bold" textTransform="capitalize">
-                            {metric.metricType === 'activity' ? 'Latest Activity' : metric.metricType.replace(/_/g, ' ')}
-                          </Text>
-                          <Text fontSize="$2" opacity={0.7}>
-                            {formatDate(metric.recordedAt)}
-                          </Text>
-                        </YStack>
-                        <Text fontSize="$6" fontWeight="bold">
-                          {formatMetricValue(metric.value, metric.unit, metric.metricType)}
-                        </Text>
-                      </XStack>
-                    </Card>
-                  ))}
-              </YStack>
-            ) : (
-              <Card padding="$4">
-                <Text textAlign="center" opacity={0.7}>
-                  No health data synced yet. Data will appear after the initial
-                  sync completes.
-                </Text>
-              </Card>
-            )}
-          </>
         )}
       </YStack>
     </ScrollView>
