@@ -124,12 +124,9 @@ export function useGarminMetrics() {
   return useQuery<GetMetricsLatestResponse, Error>({
     queryKey: ['garmin', 'metrics', 'latest'],
     queryFn: async () => {
-      const response = await fetch(
-        'http://localhost:4000/garmin/metrics/latest',
-        {
-          credentials: 'include',
-        },
-      );
+      const response = await fetch('/api/garmin/metrics/latest', {
+        credentials: 'include',
+      });
 
       if (!response.ok) {
         throw new Error('Failed to fetch latest health metrics');
