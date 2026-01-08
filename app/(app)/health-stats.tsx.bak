@@ -204,9 +204,7 @@ export default function HealthStatsPage() {
                   <XStack justifyContent="space-between" alignItems="center">
                     <YStack>
                       <Text fontWeight="bold" textTransform="capitalize">
-                        {type === 'activity'
-                          ? 'Latest Activity'
-                          : type.replace(/_/g, ' ')}
+                        {type === 'activity' ? 'Latest Activity' : type.replace(/_/g, ' ')}
                       </Text>
                       <Text fontSize="$2" opacity={0.7}>
                         {formatDate(metric.recordedAt)}
@@ -218,7 +216,7 @@ export default function HealthStatsPage() {
                   </XStack>
                 </Card>
               ))}
-
+            
             <Text fontSize="$2" opacity={0.7} textAlign="center" marginTop="$2">
               💡 Calories are shown within activity data
             </Text>
@@ -226,8 +224,7 @@ export default function HealthStatsPage() {
         ) : (
           <Card padding="$4">
             <Text textAlign="center" opacity={0.7}>
-              No health data synced yet. Click "Refresh" to sync your latest
-              data.
+              No health data synced yet. Click "Refresh" to sync your latest data.
             </Text>
           </Card>
         )}
