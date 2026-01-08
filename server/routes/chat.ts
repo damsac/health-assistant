@@ -136,7 +136,7 @@ chat.post('/', async (c) => {
     dietaryPreferences: profile?.dietaryPreferences,
     dateOfBirth: profile?.dateOfBirth,
     measurementSystem: profile?.measurementSystem,
-    healthData: Object.keys(healthData).length > 0 ? healthData : undefined,
+    healthData,
   };
 
   // Convert UIMessage format to model message format

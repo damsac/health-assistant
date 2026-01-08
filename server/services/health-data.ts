@@ -1,11 +1,11 @@
 import { desc, eq } from 'drizzle-orm';
 /**
  * Health data processing service
- * 
+ *
  * This service processes raw health metrics from the database
  * and converts them into structured summaries suitable for
  * AI consultation and display purposes.
- * 
+ *
  * Main functions:
  * - getLatestHealthData: Get the most recent health metrics for a user
  * - getHealthDataForDays: Get daily summaries for multiple days
@@ -15,7 +15,7 @@ import { db, healthMetric } from '../../lib/db';
 
 /**
  * Health data summary interface
- * 
+ *
  * Contains aggregated health metrics for a specific date range
  */
 export interface HealthDataSummary {
@@ -34,17 +34,17 @@ export interface HealthDataSummary {
   stressAvg?: number;
   stressMax?: number;
   latestDate?: Date;
-};
+}
 
 /**
  * Fetch the most recent health metrics for a user
- * 
+ *
  * @param userId - User identifier
- * @returns Promise<HealthDataSummary> - Most recent health metrics
+ * @returns Promise<HealthDataSummary | undefined> - Most recent health metrics or undefined if no data
  */
 export async function getLatestHealthData(
   userId: string,
-): Promise<HealthDataSummary> {
+): Promise<HealthDataSummary | undefined> {
   // Get the most recent date with data
   const latestMetrics = await db
     .select({
@@ -58,7 +58,7 @@ export async function getLatestHealthData(
     .limit(50);
 
   if (latestMetrics.length === 0) {
-    return {};
+    return undefined;
   }
 
   const summary: HealthDataSummary = {
@@ -76,7 +76,7 @@ export async function getLatestHealthData(
   // Parse values
   /**
    * Safely parse a metric value to a float
-   * 
+   *
    * @param value - String value to parse
    * @returns number | undefined - Parsed float or undefined if invalid
    */
@@ -92,7 +92,9 @@ export async function getLatestHealthData(
   summary.steps = parseMetricFloat(metricMap.get('steps'));
   summary.calories = parseMetricFloat(metricMap.get('calories'));
   summary.distance = parseMetricFloat(metricMap.get('distance'));
-  summary.restingHeartRate = parseMetricFloat(metricMap.get('resting_heart_rate'));
+  summary.restingHeartRate = parseMetricFloat(
+    metricMap.get('resting_heart_rate'),
+  );
   summary.maxHeartRate = parseMetricFloat(metricMap.get('max_heart_rate'));
   summary.minHeartRate = parseMetricFloat(metricMap.get('min_heart_rate'));
   summary.sleepDuration = parseMetricFloat(metricMap.get('sleep_duration'));
@@ -108,7 +110,7 @@ export async function getLatestHealthData(
  */
 /**
  * Get health data for the last N days grouped by day
- * 
+ *
  * @param userId - User identifier
  * @param days - Number of days to fetch (default: 7)
  * @returns Promise<HealthDataSummary[]> - Array of daily summaries
