@@ -1,0 +1,208 @@
+import { desc, eq } from 'drizzle-orm';
+import { Hono } from 'hono';
+import { db } from '@/lib/db';
+import { garminConnection, healthMetric } from '@/lib/db/schema';
+import { createGarminClient } from '../services/garmin-sync';
+
+const garmin = new Hono();
+
+garmin.get('/connection', async (c) => {
+  const userId = c.req.header('x-user-id');
+  if (!userId) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  const connection = await db.query.garminConnection.findFirst({
+    where: eq(garminConnection.userId, userId),
+  });
+
+  return c.json({
+    connected: !!connection?.isActive,
+    email: connection?.garminEmail,
+    lastSync: connection?.lastSyncAt,
+  });
+});
+
+garmin.post('/connect', async (c) => {
+  const userId = c.req.header('x-user-id');
+  if (!userId) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  const { email, password } = await c.req.json();
+
+  if (!email || !password) {
+    return c.json({ error: 'Email and password are required' }, 400);
+  }
+
+  const existingConnection = await db.query.garminConnection.findFirst({
+    where: eq(garminConnection.userId, userId),
+  });
+
+  if (existingConnection) {
+    return c.json({ error: 'Garmin account already connected' }, 400);
+  }
+
+  try {
+    // Create connection record first
+    await db.insert(garminConnection).values({
+      userId,
+      garminEmail: email,
+      isActive: true,
+    });
+
+    // Create client and login
+    const syncService = await createGarminClient(userId, email, password);
+    await syncService.syncLastNDays(7);
+
+    return c.json({
+      success: true,
+      message: 'Garmin account connected and initial sync completed',
+    });
+  } catch (error) {
+    console.error('Failed to connect Garmin account:', error);
+    return c.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to connect Garmin account',
+      },
+      500,
+    );
+  }
+});
+
+garmin.post('/disconnect', async (c) => {
+  const userId = c.req.header('x-user-id');
+  if (!userId) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  await db.delete(garminConnection).where(eq(garminConnection.userId, userId));
+
+  return c.json({ success: true });
+});
+
+garmin.post('/sync', async (c) => {
+  const userId = c.req.header('x-user-id');
+  if (!userId) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  const connection = await db.query.garminConnection.findFirst({
+    where: eq(garminConnection.userId, userId),
+  });
+
+  if (!connection) {
+    return c.json({ error: 'No Garmin account connected' }, 400);
+  }
+
+  try {
+    const syncService = await createGarminClient(userId);
+    await syncService.syncLastNDays(7);
+
+    return c.json({
+      success: true,
+      message: 'Sync completed successfully',
+    });
+  } catch (error) {
+    console.error('Sync failed:', error);
+    return c.json(
+      {
+        error: error instanceof Error ? error.message : 'Sync failed',
+      },
+      500,
+    );
+  }
+});
+
+garmin.get('/metrics/latest', async (c) => {
+  const userId = c.req.header('x-user-id');
+  if (!userId) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  const metrics = await db.query.healthMetric.findMany({
+    where: eq(healthMetric.userId, userId),
+    orderBy: [desc(healthMetric.recordedAt)],
+    limit: 100,
+  });
+
+  const latestByType: Record<string, any> = {};
+
+  for (const metric of metrics) {
+    if (!latestByType[metric.metricType]) {
+      latestByType[metric.metricType] = metric;
+    }
+  }
+
+  return c.json(latestByType);
+});
+
+garmin.get('/metrics', async (c) => {
+  const userId = c.req.header('x-user-id');
+  if (!userId) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  const type = c.req.query('type');
+  const days = parseInt(c.req.query('days') || '30', 10);
+
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+
+  const query = db.query.healthMetric.findMany({
+    where: eq(healthMetric.userId, userId),
+    orderBy: [desc(healthMetric.recordedAt)],
+  });
+
+  const allMetrics = await query;
+
+  let filteredMetrics = allMetrics.filter(
+    (m) => new Date(m.recordedAt) >= startDate,
+  );
+
+  if (type) {
+    filteredMetrics = filteredMetrics.filter((m) => m.metricType === type);
+  }
+
+  return c.json(filteredMetrics);
+});
+
+garmin.get('/metrics/summary', async (c) => {
+  const userId = c.req.header('x-user-id');
+  if (!userId) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  const days = parseInt(c.req.query('days') || '30', 10);
+
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+
+  const allMetrics = await db.query.healthMetric.findMany({
+    where: eq(healthMetric.userId, userId),
+    orderBy: [desc(healthMetric.recordedAt)],
+  });
+
+  const filteredMetrics = allMetrics.filter(
+    (m) => new Date(m.recordedAt) >= startDate,
+  );
+
+  const summary: Record<string, { count: number; latest: any }> = {};
+
+  for (const metric of filteredMetrics) {
+    if (!summary[metric.metricType]) {
+      summary[metric.metricType] = {
+        count: 0,
+        latest: metric,
+      };
+    }
+    summary[metric.metricType].count++;
+  }
+
+  return c.json(summary);
+});
+
+export default garmin;

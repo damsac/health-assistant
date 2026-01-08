@@ -1,12 +1,14 @@
-import { eq } from 'drizzle-orm';
-import type { GarminConnectionResponse } from '@/lib/api/garmin';
-import { json, withAuth } from '@/lib/api-middleware';
-import { db, garminConnection } from '@/lib/db';
+import { withAuth } from '@/lib/api-middleware';
+
+const AGENT_URL = process.env.EXPO_PUBLIC_AGENT_URL || 'http://localhost:4000';
 
 export const GET = withAuth(async (_request, session) => {
-  const connection = await db.query.garminConnection.findFirst({
-    where: eq(garminConnection.userId, session.user.id),
+  const response = await fetch(`${AGENT_URL}/garmin/connection`, {
+    headers: {
+      'x-user-id': session.user.id,
+    },
   });
 
-  return json<GarminConnectionResponse | null>(connection || null);
+  const data = await response.json();
+  return Response.json(data, { status: response.status });
 });

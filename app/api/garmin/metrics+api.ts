@@ -1,37 +1,20 @@
-import { and, desc, eq, gte } from 'drizzle-orm';
-import { type GetMetricsResponse, getMetricsSchema } from '@/lib/api/garmin';
-import { errorResponse, json, withAuth } from '@/lib/api-middleware';
-import { db, healthMetric } from '@/lib/db';
+import { withAuth } from '@/lib/api-middleware';
+
+const AGENT_URL = process.env.EXPO_PUBLIC_AGENT_URL || 'http://localhost:4000';
 
 export const GET = withAuth(async (request, session) => {
   const url = new URL(request.url);
-  const query = Object.fromEntries(url.searchParams);
+  const queryParams = url.searchParams.toString();
 
-  // Validate query parameters
-  const parsed = getMetricsSchema.safeParse(query);
-  if (!parsed.success) {
-    return errorResponse('Invalid query parameters', 400);
-  }
+  const response = await fetch(
+    `${AGENT_URL}/garmin/metrics${queryParams ? `?${queryParams}` : ''}`,
+    {
+      headers: {
+        'x-user-id': session.user.id,
+      },
+    },
+  );
 
-  const { type: metricType, days } = parsed.data;
-
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
-
-  const whereConditions = [
-    eq(healthMetric.userId, session.user.id),
-    gte(healthMetric.recordedAt, startDate),
-  ];
-
-  if (metricType) {
-    whereConditions.push(eq(healthMetric.metricType, metricType));
-  }
-
-  const metrics = await db.query.healthMetric.findMany({
-    where: and(...whereConditions),
-    orderBy: [desc(healthMetric.recordedAt)],
-    limit: 1000,
-  });
-
-  return json<GetMetricsResponse>(metrics);
+  const data = await response.json();
+  return Response.json(data, { status: response.status });
 });
