@@ -1,32 +1,55 @@
-# Garmin Integration Documentation
+# Garmin Connect Integration
+
+This document describes the Garmin Connect integration in the health assistant app.
 
 ## Overview
 
-This document describes the Garmin Connect integration that allows users to sync their health and fitness data from Garmin Connect to the health assistant application.
+The Garmin Connect integration allows users to sync their health data from Garmin Connect to the health assistant app. This includes steps, heart rate, sleep data, activities, and calories.
 
 ## Architecture
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Backend       │    │  Python Script  │
-│   (React)       │    │   (Hono)        │    │  (Garmin API)   │
-├─────────────────┤    ├─────────────────┤    ├─────────────────┤
-│ - Garmin UI     │◄──►│ - /garmin/*     │◄──►│ - garmin_sync.py│
-│ - use-garmin.ts│    │ - Auth & Routes │    │ - Data Fetcher  │
-│ - Display Data  │    │ - DB Operations │    │ - Data Storage  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-                    ┌─────────────────┐
-                    │   PostgreSQL    │
-                    │   Database      │
-                    ├─────────────────┤
-                    │ - health_metric │
-                    │ - garmin_       │
-                    │   connection    │
-                    └─────────────────┘
+Frontend (React Native) → Agent Server (Hono) → Garmin Connect API
+                            ↓
+                         PostgreSQL
 ```
+
+1. **Frontend** - React Native app with expo-router
+2. **Agent Server** - Hono server that handles Garmin API calls
+3. **Database** - PostgreSQL storing synced health metrics
+
+## Authentication Flow
+
+1. User enters Garmin credentials in the app
+2. Server logs into Garmin Connect using OAuth1/OAuth2
+3. OAuth tokens are stored in the database
+4. Future syncs use stored tokens (no password needed)
+
+## Data Synced
+
+### Daily Metrics
+- **Steps** - Daily step count
+- **Calories** - Total daily calories burned
+- **Active Calories** - Calories burned through activity
+
+### Heart Rate
+- **Resting Heart Rate** - BPM
+- **Maximum Heart Rate** - BPM
+- **Minimum Heart Rate** - BPM
+
+### Sleep
+- **Sleep Duration** - Total sleep time in minutes
+- **Deep Sleep** - Deep sleep duration in minutes
+- **Light Sleep** - Light sleep duration in minutes
+- **REM Sleep** - REM sleep duration in minutes
+- **Awake Time** - Time awake during sleep period
+
+### Activities
+- **Latest Activity** - JSON object with activity details including:
+  - Activity name
+  - Duration
+  - Distance
+  - Calories burned
 
 ## Data Flow
 

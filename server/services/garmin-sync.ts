@@ -3,16 +3,55 @@ import { GarminConnect } from 'garmin-connect';
 import { db, garminConnection, healthMetric } from '@/lib/db';
 
 /**
- * Garmin Connect synchronization service
+ * Garmin Connect Integration Service
  *
- * Handles authentication, data fetching, and storage of health metrics
- * from Garmin Connect to PostgreSQL database.
+ * This service handles all interactions with Garmin Connect:
+ * - OAuth authentication and token management
+ * - Fetching health data (steps, heart rate, sleep, activities, calories)
+ * - Storing data in the database
+ *
+ * Data Flow:
+ * 1. User authenticates with Garmin credentials
+ * 2. OAuth tokens are stored in the database
+ * 3. Service fetches data using stored tokens
+ * 4. Data is stored as health metrics with type and value
+ *
+ * Available Metrics:
+ * - steps: Daily step count
+ * - resting_heart_rate: Resting heart rate in BPM
+ * - max_heart_rate: Maximum heart rate in BPM
+ * - min_heart_rate: Minimum heart rate in BPM
+ * - sleep_duration: Total sleep time in minutes
+ * - deep_sleep: Deep sleep duration in minutes
+ * - light_sleep: Light sleep duration in minutes
+ * - rem_sleep: REM sleep duration in minutes
+ * - awake_time: Time awake during sleep period in minutes
+ * - calories: Total daily calories burned (kcal)
+ * - active_calories: Calories burned through activity (kcal)
+ * - activity: JSON string of latest activity details
  */
 
 export class GarminSyncService {
+  /**
+   * Garmin Connect client instance
+   */
   private client: GarminConnect;
+
+  /**
+   * User ID associated with the Garmin Connect account
+   */
   private userId: string;
 
+  /**
+   * Constructor for the GarminSyncService
+   *
+   * Initializes the Garmin Connect client with the provided email and password
+   * and sets the user ID for the account.
+   *
+   * @param email Email address for the Garmin Connect account
+   * @param password Password for the Garmin Connect account
+   * @param userId User ID associated with the Garmin Connect account
+   */
   constructor(email: string, password: string, userId: string) {
     this.client = new GarminConnect({
       username: email,
@@ -68,6 +107,15 @@ export class GarminSyncService {
 
   /**
    * Sync daily summary data for a specific date
+   *
+   * Fetches and stores:
+   * - Steps from getSteps()
+   * - Total calories from daily summary API
+   * - Active calories from daily summary API
+   *
+   * @param date The date to sync data for
+   * @param force If true, overwrites existing data
+   * @returns Promise<boolean> True if sync succeeded
    */
   async syncDailySummary(date: Date, force = false): Promise<boolean> {
     try {

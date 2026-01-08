@@ -2,14 +2,45 @@ import { desc, eq } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { db } from '@/lib/db';
 import { garminConnection, healthMetric } from '@/lib/db/schema';
+/**
+ * Garmin Connect API Routes
+ *
+ * This module provides API endpoints for Garmin Connect integration.
+ * All routes require authentication via session cookies.
+ *
+ * Endpoints:
+ * - GET /garmin/connection - Get connection status and email
+ * - POST /garmin/connect - Connect Garmin account with credentials
+ * - POST /garmin/disconnect - Disconnect and remove Garmin account
+ * - POST /garmin/sync - Trigger manual data sync
+ * - GET /garmin/metrics - Get health metrics with optional filters
+ * - GET /garmin/metrics/latest - Get latest metric for each type
+ * - GET /garmin/metrics/summary - Get aggregated metrics summary
+ *
+ * Authentication:
+ * All routes use authMiddleware which extracts user session from cookies.
+ * The user ID from the session is used to fetch/store Garmin data.
+ */
 import { type AuthEnv, authMiddleware } from '../middleware/auth';
 import { createGarminClient } from '../services/garmin-sync';
 
+/**
+ * Garmin API Routes
+ */
 const garmin = new Hono<AuthEnv>();
 
 // Apply auth middleware to all routes
 garmin.use('*', authMiddleware);
 
+/**
+ * GET /connection
+ * Get connection status and email
+ *
+ * Returns:
+ * - connected: boolean - Whether Garmin account is connected
+ * - email: string - Garmin account email
+ * - lastSync: Date - Last sync date
+ */
 garmin.get('/connection', async (c) => {
   const session = c.get('session');
   const userId = session.user.id;

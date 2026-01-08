@@ -8,6 +8,26 @@
  *
  * All hooks use port 4000 for API calls
  */
+/**
+ * Garmin Connect React Query Hooks
+ *
+ * This file provides React Query hooks for interacting with the Garmin Connect API.
+ * All hooks call the agent server directly at localhost:4000.
+ *
+ * Available Hooks:
+ * - useGarminConnection: Get connection status
+ * - useConnectGarmin: Connect Garmin account
+ * - useDisconnectGarmin: Disconnect Garmin account
+ * - useGarminMetrics: Get health metrics with filters
+ * - useHealthMetrics: Get metrics for specific type
+ * - useGarminMetricsLatest: Get latest metric for each type
+ * - useGarminMetricsSummary: Get aggregated summary
+ * - useSyncGarmin: Trigger manual sync
+ *
+ * Authentication:
+ * All requests include credentials: 'include' to send session cookies.
+ * The server uses these cookies to authenticate the user.
+ */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   ConnectGarminRequest,
