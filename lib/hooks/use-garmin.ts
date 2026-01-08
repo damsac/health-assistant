@@ -32,6 +32,8 @@ export type {
 
 type GarminConnection = GarminConnectionResponse;
 
+const AGENT_URL = process.env.EXPO_PUBLIC_AGENT_URL || 'http://localhost:4000';
+
 /**
  * Hook to manage Garmin connection status
  * @returns Query result with connection details or null if not connected
@@ -40,7 +42,7 @@ export function useGarminConnection() {
   return useQuery<GarminConnectionResponse | null>({
     queryKey: ['garmin', 'connection'],
     queryFn: async () => {
-      const response = await fetch('/api/garmin/connection', {
+      const response = await fetch(`${AGENT_URL}/garmin/connection`, {
         credentials: 'include',
       });
       if (!response.ok) {
@@ -67,10 +69,10 @@ export function useConnectGarmin() {
       garminEmail: string;
       garminPassword: string;
     }) => {
-      const response = await fetch('/api/garmin/connect', {
+      const response = await fetch(`${AGENT_URL}/garmin/connect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ garminEmail, garminPassword }),
+        body: JSON.stringify({ email: garminEmail, password: garminPassword }),
         credentials: 'include',
       });
 
@@ -98,8 +100,8 @@ export function useDisconnectGarmin() {
 
   return useMutation<DisconnectGarminResponse, Error, void>({
     mutationFn: async () => {
-      const response = await fetch('/api/garmin/disconnect', {
-        method: 'DELETE',
+      const response = await fetch(`${AGENT_URL}/garmin/disconnect`, {
+        method: 'POST',
         credentials: 'include',
       });
 
@@ -124,7 +126,7 @@ export function useGarminMetrics() {
   return useQuery<GetMetricsLatestResponse, Error>({
     queryKey: ['garmin', 'metrics', 'latest'],
     queryFn: async () => {
-      const response = await fetch('/api/garmin/metrics/latest', {
+      const response = await fetch(`${AGENT_URL}/garmin/metrics/latest`, {
         credentials: 'include',
       });
 
@@ -157,7 +159,7 @@ export function useHealthMetrics(metricType?: string, days = 7) {
         ...(metricType && { type: metricType }),
       });
 
-      const response = await fetch(`/api/garmin/metrics?${params}`, {
+      const response = await fetch(`${AGENT_URL}/garmin/metrics?${params}`, {
         credentials: 'include',
       });
 
@@ -182,9 +184,12 @@ export function useHealthMetricsSummary(days = 7) {
     queryFn: async () => {
       const params = new URLSearchParams({ days: days.toString() });
 
-      const response = await fetch(`/api/garmin/metrics/summary?${params}`, {
-        credentials: 'include',
-      });
+      const response = await fetch(
+        `${AGENT_URL}/garmin/metrics/summary?${params}`,
+        {
+          credentials: 'include',
+        },
+      );
 
       if (!response.ok) {
         throw new Error('Failed to fetch health metrics summary');
@@ -205,7 +210,7 @@ export function useSyncGarmin() {
 
   return useMutation<SyncGarminResponse, Error, void>({
     mutationFn: async () => {
-      const response = await fetch('/api/garmin/sync', {
+      const response = await fetch(`${AGENT_URL}/garmin/sync`, {
         method: 'POST',
         credentials: 'include',
       });
