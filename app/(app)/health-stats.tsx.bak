@@ -95,10 +95,23 @@ export default function HealthStatsPage() {
 
       const numValue = parseFloat(value);
       if (!Number.isNaN(numValue)) {
+        // Special formatting for calories
+        if (metricType === 'calories' || metricType === 'active_calories') {
+          return (
+            <YStack alignItems="flex-end">
+              <Text fontSize="$6" fontWeight="bold">
+                {Math.round(numValue)}
+              </Text>
+              <Text fontSize="$3" opacity={0.7}>
+                {unit || 'kcal'}
+              </Text>
+            </YStack>
+          );
+        }
         return `${numValue.toFixed(1)} ${unit || ''}`;
       }
-    } catch {
-      // If parsing fails, return as is
+    } catch (error) {
+      console.error('Error formatting metric value:', error);
     }
     return value;
   };
@@ -204,9 +217,12 @@ export default function HealthStatsPage() {
                   <XStack justifyContent="space-between" alignItems="center">
                     <YStack>
                       <Text fontWeight="bold" textTransform="capitalize">
-                        {type === 'activity' ? 'Latest Activity' : type.replace(/_/g, ' ')}
+                        {type === 'activity' ? 'Latest Activity' : 
+                         type === 'calories' ? 'Total Calories' :
+                         type === 'active_calories' ? 'Active Calories' :
+                         type.replace(/_/g, ' ')}
                       </Text>
-                      <Text fontSize="$2" opacity={0.7}>
+                      <Text fontSize="$2" opacity={0.7">
                         {formatDate(metric.recordedAt)}
                       </Text>
                     </YStack>
@@ -216,7 +232,7 @@ export default function HealthStatsPage() {
                   </XStack>
                 </Card>
               ))}
-            
+
             <Text fontSize="$2" opacity={0.7} textAlign="center" marginTop="$2">
               💡 Calories are shown within activity data
             </Text>
@@ -224,7 +240,8 @@ export default function HealthStatsPage() {
         ) : (
           <Card padding="$4">
             <Text textAlign="center" opacity={0.7}>
-              No health data synced yet. Click "Refresh" to sync your latest data.
+              No health data synced yet. Click "Refresh" to sync your latest
+              data.
             </Text>
           </Card>
         )}

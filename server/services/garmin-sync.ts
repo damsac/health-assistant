@@ -82,9 +82,41 @@ export class GarminSyncService {
         await this.storeMetric('steps', steps, 'steps', date, force);
       }
 
-      // Note: garmin-connect doesn't have direct methods for calories, distance, etc.
-      // These would need to be fetched from activities or other endpoints
-      // For now, we'll focus on what's available
+      // Fetch daily calories using the generic get method
+      try {
+        const dateStr = date.toISOString().split('T')[0];
+        const dailyData: any = await this.client.get(
+          `usersummary/usersummary/${dateStr}/daily`,
+        );
+        if (dailyData && dailyData.totalKilocalories != null) {
+          await this.storeMetric(
+            'calories',
+            dailyData.totalKilocalories,
+            'kcal',
+            date,
+            force,
+          );
+          console.log(
+            `    ✓ Calories synced: ${dailyData.totalKilocalories} kcal`,
+          );
+        }
+        if (dailyData && dailyData.activeKilocalories != null) {
+          await this.storeMetric(
+            'active_calories',
+            dailyData.activeKilocalories,
+            'kcal',
+            date,
+            force,
+          );
+          console.log(
+            `    ✓ Active calories synced: ${dailyData.activeKilocalories} kcal`,
+          );
+        }
+      } catch (calorieError: any) {
+        console.log(
+          `    Could not fetch calories: ${calorieError?.message || calorieError}`,
+        );
+      }
 
       console.log('  ✓ Daily summary synced');
       return true;
@@ -218,6 +250,7 @@ export class GarminSyncService {
       console.log(`    Fetching activities for ${dateStr}`);
 
       const activities = await this.client.getActivities(0, 20);
+      console.log(`    Found ${activities.length} total activities`);
       const dateActivities = activities.filter(
         (activity: { startTimeLocal: string }) => {
           const activityDate = new Date(activity.startTimeLocal)
@@ -227,9 +260,16 @@ export class GarminSyncService {
         },
       );
 
+      console.log(
+        `    Found ${dateActivities.length} activities for ${dateStr}`,
+      );
+
       if (dateActivities.length > 0) {
         // Store the most recent activity
         const activity = dateActivities[0];
+        console.log(
+          `    Activity: ${activity.activityName || 'Unknown'}, Calories: ${activity.calories || 'N/A'}`,
+        );
         await this.storeMetric(
           'activity',
           JSON.stringify(activity),
@@ -238,6 +278,8 @@ export class GarminSyncService {
           force,
         );
         console.log(`  ✓ ${dateActivities.length} activities synced`);
+      } else {
+        console.log(`    No activities found for ${dateStr}`);
       }
 
       return true;
