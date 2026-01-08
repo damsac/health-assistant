@@ -52,7 +52,7 @@ export const getMetricsLatestSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
 });
 export type GetMetricsLatestRequest = z.infer<typeof getMetricsLatestSchema>;
-export type GetMetricsLatestResponse = HealthMetricResponse[];
+export type GetMetricsLatestResponse = Record<string, HealthMetricResponse>;
 
 export const getMetricsSummarySchema = z.object({
   days: z.coerce.number().int().min(1).max(365).default(7),

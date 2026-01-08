@@ -197,27 +197,81 @@ export default function HealthStatsPage() {
           </Card>
         ) : latestMetrics && Object.keys(latestMetrics).length > 0 ? (
           <YStack gap="$3">
-            {Object.entries(latestMetrics)
-              .filter(([type]) => type !== 'heart_rate_detailed')
-              .map(([type, metric]) => (
-                <Card key={metric.id} padding="$3">
-                  <XStack justifyContent="space-between" alignItems="center">
-                    <YStack>
-                      <Text fontWeight="bold" textTransform="capitalize">
-                        {type === 'activity'
-                          ? 'Latest Activity'
-                          : type.replace(/_/g, ' ')}
-                      </Text>
-                      <Text fontSize="$2" opacity={0.7}>
-                        {formatDate(metric.recordedAt)}
-                      </Text>
-                    </YStack>
-                    <Text fontSize="$6" fontWeight="bold">
-                      {formatMetricValue(metric.value, metric.unit, type)}
+            {/* Basic Metrics */}
+            {latestMetrics.steps && (
+              <Card padding="$3">
+                <XStack justifyContent="space-between" alignItems="center">
+                  <YStack>
+                    <Text fontWeight="bold">Steps</Text>
+                    <Text fontSize="$2" opacity={0.7}>
+                      {formatDate(latestMetrics.steps.recordedAt)}
                     </Text>
-                  </XStack>
-                </Card>
-              ))}
+                  </YStack>
+                  <Text fontSize="$6" fontWeight="bold">
+                    {latestMetrics.steps.value} {latestMetrics.steps.unit}
+                  </Text>
+                </XStack>
+              </Card>
+            )}
+
+            {latestMetrics.resting_heart_rate && (
+              <Card padding="$3">
+                <XStack justifyContent="space-between" alignItems="center">
+                  <YStack>
+                    <Text fontWeight="bold">Resting Heart Rate</Text>
+                    <Text fontSize="$2" opacity={0.7}>
+                      {formatDate(latestMetrics.resting_heart_rate.recordedAt)}
+                    </Text>
+                  </YStack>
+                  <Text fontSize="$6" fontWeight="bold">
+                    {latestMetrics.resting_heart_rate.value}{' '}
+                    {latestMetrics.resting_heart_rate.unit}
+                  </Text>
+                </XStack>
+              </Card>
+            )}
+
+            {latestMetrics.sleep_duration && (
+              <Card padding="$3">
+                <XStack justifyContent="space-between" alignItems="center">
+                  <YStack>
+                    <Text fontWeight="bold">Sleep Duration</Text>
+                    <Text fontSize="$2" opacity={0.7}>
+                      {formatDate(latestMetrics.sleep_duration.recordedAt)}
+                    </Text>
+                  </YStack>
+                  <Text fontSize="$6" fontWeight="bold">
+                    {Math.round(parseFloat(latestMetrics.sleep_duration.value))}{' '}
+                    {latestMetrics.sleep_duration.unit}
+                  </Text>
+                </XStack>
+              </Card>
+            )}
+
+            {/* Activity with calories */}
+            {latestMetrics.activity && (
+              <Card padding="$3">
+                <XStack justifyContent="space-between" alignItems="center">
+                  <YStack>
+                    <Text fontWeight="bold">Latest Activity</Text>
+                    <Text fontSize="$2" opacity={0.7}>
+                      {formatDate(latestMetrics.activity.recordedAt)}
+                    </Text>
+                  </YStack>
+                  <YStack alignItems="flex-end">
+                    {formatMetricValue(
+                      latestMetrics.activity.value,
+                      latestMetrics.activity.unit,
+                      'activity',
+                    )}
+                  </YStack>
+                </XStack>
+              </Card>
+            )}
+
+            <Text fontSize="$2" opacity={0.7} textAlign="center">
+              Note: Calories are shown within activity data above
+            </Text>
           </YStack>
         ) : (
           <Card padding="$4">
