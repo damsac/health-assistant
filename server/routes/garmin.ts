@@ -14,6 +14,22 @@ import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { db, garminConnection, healthMetric } from '@/lib/db';
 import { type AuthEnv, authMiddleware } from '../middleware/auth';
+import {
+  type ConnectGarminResponse,
+  type DisconnectGarminResponse,
+  type SyncGarminResponse,
+  type GarminConnectionResponse,
+  type GetMetricsRequest,
+  type GetMetricsResponse,
+  type GetMetricsLatestRequest,
+  type GetMetricsLatestResponse,
+  type GetMetricsSummaryRequest,
+  type GetMetricsSummaryResponse,
+  connectGarminSchema,
+  getMetricsSchema,
+  getMetricsLatestSchema,
+  getMetricsSummarySchema,
+} from '@/lib/api/garmin';
 
 const execAsync = promisify(exec);
 const garmin = new Hono<AuthEnv>();
@@ -34,11 +50,15 @@ garmin.use('*', authMiddleware);
  */
 garmin.post('/connect', async (c) => {
   const session = c.get('session');
-  const { garminEmail, garminPassword } = await c.req.json();
-
-  if (!garminEmail || !garminPassword) {
-    return c.json({ error: 'Email and password are required' }, 400);
+  const body = await c.req.json();
+  
+  // Validate request body
+  const parsed = connectGarminSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: 'Invalid request body', details: parsed.error }, 400);
   }
+  
+  const { garminEmail, garminPassword } = parsed.data;
 
   try {
     const existingConnection = await db.query.garminConnection.findFirst({
@@ -94,14 +114,19 @@ garmin.post('/connect', async (c) => {
           .where(eq(garminConnection.userId, session.user.id));
       });
 
-    return c.json({
+    const response: ConnectGarminResponse = {
       success: true,
       message:
         'Garmin connected successfully. Initial sync started in background.',
-    });
+    };
+    return c.json(response);
   } catch (error) {
     console.error('Error connecting Garmin:', error);
-    return c.json({ error: 'Failed to connect Garmin account' }, 500);
+    const response: ConnectGarminResponse = {
+      success: false,
+      message: 'Failed to connect Garmin account',
+    };
+    return c.json(response, 500);
   }
 });
 
@@ -112,7 +137,7 @@ garmin.get('/connection', async (c) => {
     where: eq(garminConnection.userId, session.user.id),
   });
 
-  return c.json(connection || null);
+  return c.json(connection as GarminConnectionResponse | null);
 });
 
 /**
@@ -134,7 +159,11 @@ garmin.delete('/disconnect', async (c) => {
     })
     .where(eq(garminConnection.userId, session.user.id));
 
-  return c.json({ success: true, message: 'Garmin disconnected successfully' });
+  const response: DisconnectGarminResponse = {
+    success: true,
+    message: 'Garmin disconnected successfully',
+  };
+  return c.json(response);
 });
 
 /**
@@ -187,10 +216,11 @@ garmin.post('/sync', async (c) => {
       })
       .where(eq(garminConnection.userId, session.user.id));
 
-    return c.json({
+    const response: SyncGarminResponse = {
       success: true,
       message: 'Garmin data synced successfully',
-    });
+    };
+    return c.json(response);
   } catch (error) {
     console.error(`✗ Garmin sync failed for user ${session.user.id}:`, error);
 
@@ -203,7 +233,11 @@ garmin.post('/sync', async (c) => {
       })
       .where(eq(garminConnection.userId, session.user.id));
 
-    return c.json({ error: 'Failed to sync Garmin data' }, 500);
+    const response: SyncGarminResponse = {
+      success: false,
+      message: 'Failed to sync Garmin data',
+    };
+    return c.json(response, 500);
   }
 });
 
@@ -221,8 +255,15 @@ garmin.post('/sync', async (c) => {
  */
 garmin.get('/metrics', async (c) => {
   const session = c.get('session');
-  const metricType = c.req.query('type');
-  const days = parseInt(c.req.query('days') || '7', 10);
+  const query = c.req.query();
+  
+  // Validate query parameters
+  const parsed = getMetricsSchema.safeParse(query);
+  if (!parsed.success) {
+    return c.json({ error: 'Invalid query parameters', details: parsed.error }, 400);
+  }
+  
+  const { type: metricType, days } = parsed.data;
 
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
@@ -242,7 +283,7 @@ garmin.get('/metrics', async (c) => {
     limit: 1000,
   });
 
-  return c.json(metrics);
+  return c.json(metrics as GetMetricsResponse);
 });
 
 /**
@@ -256,7 +297,15 @@ garmin.get('/metrics', async (c) => {
  */
 garmin.get('/metrics/summary', async (c) => {
   const session = c.get('session');
-  const days = parseInt(c.req.query('days') || '7', 10);
+  const query = c.req.query();
+  
+  // Validate query parameters
+  const parsed = getMetricsSummarySchema.safeParse(query);
+  if (!parsed.success) {
+    return c.json({ error: 'Invalid query parameters', details: parsed.error }, 400);
+  }
+  
+  const { days } = parsed.data;
 
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
@@ -278,7 +327,7 @@ garmin.get('/metrics/summary', async (c) => {
     )
     .groupBy(healthMetric.metricType);
 
-  return c.json(summaryQuery);
+  return c.json(summaryQuery as GetMetricsSummaryResponse);
 });
 
 /**
@@ -293,7 +342,14 @@ garmin.get('/metrics/summary', async (c) => {
  */
 garmin.get('/metrics/latest', async (c) => {
   const session = c.get('session');
-
+  const query = c.req.query();
+  
+  // Validate query parameters
+  const parsed = getMetricsLatestSchema.safeParse(query);
+  if (!parsed.success) {
+    return c.json({ error: 'Invalid query parameters', details: parsed.error }, 400);
+  }
+  
   // Get the most recent metric for each type, excluding None values
   const latestMetrics = await db
     .select()
@@ -317,7 +373,7 @@ garmin.get('/metrics/latest', async (c) => {
     {} as Record<string, (typeof latestMetrics)[0]>,
   );
 
-  return c.json(Object.values(grouped));
+  return c.json(Object.values(grouped) as GetMetricsLatestResponse);
 });
 
 export { garmin as garminRoute };

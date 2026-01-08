@@ -25,8 +25,9 @@ import {
   useConnectGarmin,
   useDisconnectGarmin,
   useGarminConnection,
-  useLatestHealthMetrics,
+  useGarminMetrics,
   useSyncGarmin,
+  type HealthMetricResponse,
 } from '@/lib/hooks/use-garmin';
 
 export default function GarminPage() {
@@ -38,7 +39,7 @@ export default function GarminPage() {
   const { data: connection, isLoading: connectionLoading } =
     useGarminConnection();
   const { data: latestMetrics, isLoading: metricsLoading } =
-    useLatestHealthMetrics();
+    useGarminMetrics();
   const connectMutation = useConnectGarmin();
   const disconnectMutation = useDisconnectGarmin();
   const syncMutation = useSyncGarmin();
@@ -271,7 +272,7 @@ export default function GarminPage() {
                   .filter(
                     (metric) => metric.metricType !== 'heart_rate_detailed',
                   )
-                  .map((metric) => (
+                  .map((metric: HealthMetricResponse) => (
                     <Card key={metric.id} padding="$3">
                       <XStack
                         justifyContent="space-between"

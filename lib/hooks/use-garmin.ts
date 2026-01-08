@@ -9,36 +9,37 @@
  * All hooks use port 4000 for API calls
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  type GarminConnectionResponse,
+  type ConnectGarminRequest,
+  type ConnectGarminResponse,
+  type DisconnectGarminResponse,
+  type SyncGarminResponse,
+  type GetMetricsRequest,
+  type GetMetricsResponse,
+  type GetMetricsLatestResponse,
+  type GetMetricsSummaryRequest,
+  type GetMetricsSummaryResponse,
+  type HealthMetricResponse,
+} from '@/lib/api/garmin';
 
-type GarminConnection = {
-  id: string;
-  userId: string;
-  garminEmail: string;
-  isActive: boolean;
-  lastSyncAt: string | null;
-  lastSyncStatus: string | null;
-  lastSyncError: string | null;
-  createdAt: string;
-  updatedAt: string;
+// Re-export types from the API for convenience
+export type {
+  GarminConnectionResponse,
+  HealthMetricResponse,
+  GetMetricsResponse,
+  GetMetricsLatestResponse,
+  GetMetricsSummaryResponse,
 };
 
-type HealthMetric = {
-  id: string;
-  userId: string;
-  metricType: string;
-  value: string;
-  unit: string | null;
-  recordedAt: string;
-  metadata: string | null;
-  createdAt: string;
-};
+type GarminConnection = GarminConnectionResponse;
 
 /**
  * Hook to manage Garmin connection status
  * @returns Query result with connection details or null if not connected
  */
 export function useGarminConnection() {
-  return useQuery({
+  return useQuery<GarminConnectionResponse | null>({
     queryKey: ['garmin', 'connection'],
     queryFn: async () => {
       const response = await fetch('/api/garmin/connection', {
@@ -55,15 +56,12 @@ export function useGarminConnection() {
 /**
  * Hook to connect a Garmin account
  * Stores credentials securely in the database
- * @param {Object} options - Connection options
- * @param {string} options.garminEmail - Garmin email address
- * @param {string} options.garminPassword - Garmin password
  * @returns Mutation object for connecting Garmin account
  */
 export function useConnectGarmin() {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return useMutation<ConnectGarminResponse, Error, ConnectGarminRequest>({
     mutationFn: async ({
       garminEmail,
       garminPassword,
@@ -100,7 +98,7 @@ export function useConnectGarmin() {
 export function useDisconnectGarmin() {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return useMutation<DisconnectGarminResponse, Error, void>({
     mutationFn: async () => {
       const response = await fetch('http://localhost:4000/garmin/connection', {
         method: 'DELETE',
@@ -120,6 +118,28 @@ export function useDisconnectGarmin() {
 }
 
 /**
+ * Hook to fetch latest health metrics from Garmin
+ * Returns the most recent value for each metric type
+ * @returns Query result with latest health metrics array
+ */
+export function useGarminMetrics() {
+  return useQuery<GetMetricsLatestResponse, Error>({
+    queryKey: ['garmin', 'metrics', 'latest'],
+    queryFn: async () => {
+      const response = await fetch('http://localhost:4000/garmin/metrics/latest', {
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch latest health metrics');
+      }
+
+      return response.json() as Promise<GetMetricsLatestResponse>;
+    },
+  });
+}
+
+/**
  * Hook to fetch health metrics from Garmin
  * Returns all available metrics for the user
  * @param {string} [metricType] - Optional metric type filter
@@ -127,7 +147,7 @@ export function useDisconnectGarmin() {
  * @returns Query result with health metrics array
  */
 export function useHealthMetrics(metricType?: string, days = 7) {
-  return useQuery({
+  return useQuery<GetMetricsResponse, Error, [string, string | undefined, number]>({
     queryKey: ['garmin', 'metrics', metricType, days],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -155,7 +175,7 @@ export function useHealthMetrics(metricType?: string, days = 7) {
  * @returns Query result with health data summary
  */
 export function useHealthMetricsSummary(days = 7) {
-  return useQuery({
+  return useQuery<GetMetricsSummaryResponse, Error, [string, number]>({
     queryKey: ['garmin', 'metrics', 'summary', days],
     queryFn: async () => {
       const params = new URLSearchParams({ days: days.toString() });
@@ -181,7 +201,7 @@ export function useHealthMetricsSummary(days = 7) {
 export function useSyncGarmin() {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return useMutation<SyncGarminResponse, Error, void>({
     mutationFn: async () => {
       const response = await fetch('http://localhost:4000/garmin/sync', {
         method: 'POST',
