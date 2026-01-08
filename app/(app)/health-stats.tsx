@@ -111,7 +111,7 @@ export default function HealthStatsPage() {
     );
   }
 
-  if (!connection?.isActive) {
+  if (!connection?.connected) {
     return (
       <ScrollView
         contentContainerStyle={{
@@ -151,7 +151,7 @@ export default function HealthStatsPage() {
             <XStack justifyContent="space-between" alignItems="center">
               <YStack>
                 <Text fontWeight="bold">Connected Account</Text>
-                <Text opacity={0.7}>{connection.garminEmail}</Text>
+                <Text opacity={0.7}>{connection.email}</Text>
               </YStack>
               <XStack gap="$2">
                 <Button
@@ -179,9 +179,9 @@ export default function HealthStatsPage() {
               </XStack>
             </XStack>
 
-            {connection.lastSyncAt && (
+            {connection.lastSync && (
               <Text fontSize="$2" opacity={0.7}>
-                Last Sync: {formatDate(connection.lastSyncAt)}
+                Last Sync: {formatDate(connection.lastSync)}
               </Text>
             )}
           </YStack>

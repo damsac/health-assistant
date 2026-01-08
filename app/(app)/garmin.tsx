@@ -95,13 +95,13 @@ export default function GarminPage() {
       <YStack gap="$4" paddingVertical="$4">
         <H1>Garmin Connect</H1>
 
-        {connection?.isActive ? (
+        {connection?.connected ? (
           <Card padding="$4">
             <YStack gap="$3">
               <XStack justifyContent="space-between" alignItems="center">
                 <YStack>
                   <Text fontWeight="bold">✓ Garmin Connected</Text>
-                  <Text opacity={0.7}>{connection.garminEmail}</Text>
+                  <Text opacity={0.7}>{connection.email}</Text>
                 </YStack>
                 <Button
                   size="$3"

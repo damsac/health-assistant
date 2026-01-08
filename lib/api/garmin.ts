@@ -1,10 +1,16 @@
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
-import { garminConnection, healthMetric } from '@/lib/db/schema';
+import { healthMetric } from '@/lib/db/schema';
 
-// Garmin Connection types
-const garminConnectionSelectSchema = createSelectSchema(garminConnection);
-export type GarminConnectionResponse = z.infer<typeof garminConnectionSelectSchema>;
+// Garmin Connection types - matches the actual API response
+export const garminConnectionResponseSchema = z.object({
+  connected: z.boolean(),
+  email: z.string().nullable(),
+  lastSync: z.string().nullable(),
+});
+export type GarminConnectionResponse = z.infer<
+  typeof garminConnectionResponseSchema
+>;
 
 // Health Metric types
 const healthMetricSelectSchema = createSelectSchema(healthMetric);
@@ -64,13 +70,22 @@ export type GetMetricsSummaryResponse = HealthMetricSummary[];
 // API contract - defines all endpoint types
 export type GarminApi = {
   // Connection endpoints
-  'POST /connect': { request: ConnectGarminRequest; response: ConnectGarminResponse };
+  'POST /connect': {
+    request: ConnectGarminRequest;
+    response: ConnectGarminResponse;
+  };
   'DELETE /disconnect': { response: DisconnectGarminResponse };
   'POST /sync': { response: SyncGarminResponse };
   'GET /connection': { response: GarminConnectionResponse | null };
-  
+
   // Metrics endpoints
   'GET /metrics': { request: GetMetricsRequest; response: GetMetricsResponse };
-  'GET /metrics/latest': { request: GetMetricsLatestRequest; response: GetMetricsLatestResponse };
-  'GET /metrics/summary': { request: GetMetricsSummaryRequest; response: GetMetricsSummaryResponse };
+  'GET /metrics/latest': {
+    request: GetMetricsLatestRequest;
+    response: GetMetricsLatestResponse;
+  };
+  'GET /metrics/summary': {
+    request: GetMetricsSummaryRequest;
+    response: GetMetricsSummaryResponse;
+  };
 };
