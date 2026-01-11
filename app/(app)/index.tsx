@@ -76,6 +76,12 @@ export default function HomeScreen() {
           <Button onPress={() => router.push('/(app)/chat')}>
             Health Chat
           </Button>
+          <Button onPress={() => router.push('/(app)/health-stats' as any)}>
+            Health Stats
+          </Button>
+          <Button onPress={() => router.push('/(app)/garmin')}>
+            Connect Garmin
+          </Button>
         </YStack>
 
         <YStack gap="$2">

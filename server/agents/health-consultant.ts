@@ -7,6 +7,24 @@ import type { Gender } from '@/lib/db/schema';
  * This module defines the AI agent's behavior, model selection, and system prompt.
  */
 
+export type HealthMetrics = {
+  steps?: number;
+  calories?: number;
+  distance?: number;
+  restingHeartRate?: number;
+  maxHeartRate?: number;
+  minHeartRate?: number;
+  sleepDuration?: number;
+  deepSleep?: number;
+  lightSleep?: number;
+  remSleep?: number;
+  activeMinutes?: number;
+  vigorousMinutes?: number;
+  stressAvg?: number;
+  stressMax?: number;
+  latestDate?: Date;
+};
+
 export type UserProfileContext = {
   userName?: string;
   heightCm?: number | null;
@@ -15,6 +33,7 @@ export type UserProfileContext = {
   dietaryPreferences?: string[] | null;
   dateOfBirth?: Date | null;
   measurementSystem?: string | null;
+  healthData?: HealthMetrics;
 };
 
 const calculateAge = (dateOfBirth: Date): number => {
@@ -79,6 +98,88 @@ const formatProfileContext = (context: UserProfileContext): string => {
     : '';
 };
 
+const formatHealthData = (healthData?: HealthMetrics): string => {
+  if (!healthData) return '';
+
+  const parts: string[] = [];
+
+  if (healthData.latestDate) {
+    parts.push(`Data from: ${healthData.latestDate.toLocaleDateString()}`);
+  }
+
+  if (healthData.steps !== undefined) {
+    parts.push(`Steps: ${Math.round(healthData.steps).toLocaleString()}`);
+  }
+
+  if (healthData.calories !== undefined) {
+    parts.push(
+      `Calories burned: ${Math.round(healthData.calories).toLocaleString()} kcal`,
+    );
+  }
+
+  if (healthData.distance !== undefined) {
+    const km = (healthData.distance / 1000).toFixed(2);
+    parts.push(`Distance: ${km} km`);
+  }
+
+  if (healthData.restingHeartRate !== undefined) {
+    parts.push(
+      `Resting heart rate: ${Math.round(healthData.restingHeartRate)} bpm`,
+    );
+  }
+
+  if (
+    healthData.maxHeartRate !== undefined &&
+    healthData.minHeartRate !== undefined
+  ) {
+    parts.push(
+      `Heart rate range: ${Math.round(healthData.minHeartRate)}-${Math.round(healthData.maxHeartRate)} bpm`,
+    );
+  }
+
+  if (healthData.sleepDuration !== undefined) {
+    const hours = Math.floor(healthData.sleepDuration / 60);
+    const minutes = Math.round(healthData.sleepDuration % 60);
+    parts.push(`Sleep: ${hours}h ${minutes}m`);
+
+    if (healthData.deepSleep !== undefined) {
+      const deepHours = Math.floor(healthData.deepSleep / 60);
+      const deepMinutes = Math.round(healthData.deepSleep % 60);
+      parts.push(`  - Deep sleep: ${deepHours}h ${deepMinutes}m`);
+    }
+
+    if (healthData.lightSleep !== undefined) {
+      const lightHours = Math.floor(healthData.lightSleep / 60);
+      const lightMinutes = Math.round(healthData.lightSleep % 60);
+      parts.push(`  - Light sleep: ${lightHours}h ${lightMinutes}m`);
+    }
+
+    if (healthData.remSleep !== undefined) {
+      const remHours = Math.floor(healthData.remSleep / 60);
+      const remMinutes = Math.round(healthData.remSleep % 60);
+      parts.push(`  - REM sleep: ${remHours}h ${remMinutes}m`);
+    }
+  }
+
+  if (healthData.activeMinutes !== undefined) {
+    parts.push(`Active minutes: ${Math.round(healthData.activeMinutes)}`);
+  }
+
+  if (healthData.vigorousMinutes !== undefined) {
+    parts.push(
+      `Vigorous activity: ${Math.round(healthData.vigorousMinutes)} minutes`,
+    );
+  }
+
+  if (healthData.stressAvg !== undefined) {
+    parts.push(`Average stress level: ${Math.round(healthData.stressAvg)}`);
+  }
+
+  return parts.length > 0
+    ? `\n\nRecent Health Data (from Garmin):\n${parts.map((p) => `- ${p}`).join('\n')}`
+    : '';
+};
+
 export const healthConsultantAgent = {
   model: anthropic('claude-3-haiku-20240307'),
 
@@ -87,8 +188,9 @@ export const healthConsultantAgent = {
    */
   getSystemPrompt: (context: UserProfileContext) => {
     const profileSection = formatProfileContext(context);
+    const healthDataSection = formatHealthData(context.healthData);
 
-    return `You are a holistic nutrition consultant who understands that true wellness emerges from the interconnection of diet, lifestyle, mental well-being, and environment.${profileSection}
+    return `You are a holistic nutrition consultant who understands that true wellness emerges from the interconnection of diet, lifestyle, mental well-being, and environment.${profileSection}${healthDataSection}
 
 Your approach:
 - View health through a holistic lens — what we eat, how we move, how we think, how we sleep, and how we manage stress are all deeply connected
