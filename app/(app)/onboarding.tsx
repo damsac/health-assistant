@@ -623,6 +623,25 @@ export default function OnboardingScreen() {
           </Text>
         )}
 
+        {Object.keys(errors).length > 0 && (
+          <YStack
+            gap="$2"
+            padding="$3"
+            backgroundColor="$red2"
+            borderRadius="$4"
+          >
+            <Text color="$red10" fontWeight="bold">
+              Please fix the following:
+            </Text>
+            {errors.gender && (
+              <Text color="$red10">• Select your biological sex</Text>
+            )}
+            {errors.primaryGoals && (
+              <Text color="$red10">• Select at least 1 primary goal</Text>
+            )}
+          </YStack>
+        )}
+
         {renderStep()}
 
         <XStack gap="$2" justifyContent="space-between">
