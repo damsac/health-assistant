@@ -2,7 +2,7 @@ import { Redirect, Stack, useSegments } from 'expo-router';
 import { Suspense } from 'react';
 import { Spinner, Text, YStack } from 'tamagui';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { useSuspenseProfile } from '@/lib/hooks/use-profile';
+import { useProfile } from '@/lib/hooks/use-profile';
 
 function LoadingScreen() {
   return (
@@ -21,9 +21,13 @@ function LoadingScreen() {
 }
 
 function ProfileAwareStack() {
-  const { data: profile } = useSuspenseProfile();
+  const { data: profile, isLoading } = useProfile();
   const segments = useSegments();
   const isOnOnboarding = segments.includes('onboarding' as never);
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
 
   if (!profile && !isOnOnboarding) {
     return <Redirect href="/(app)/onboarding" />;
