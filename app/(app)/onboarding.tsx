@@ -318,7 +318,14 @@ export default function OnboardingScreen() {
                       <Button
                         key={g}
                         size="$3"
-                        onPress={() => onChange(value === g ? '' : g)}
+                        onPress={() => {
+                          const newValue = value === g ? '' : g;
+                          console.log(
+                            '[Onboarding] Gender selected:',
+                            newValue,
+                          );
+                          onChange(newValue);
+                        }}
                         opacity={value === g ? 1 : 0.5}
                         disabled={upsertProfile.isPending}
                       >
