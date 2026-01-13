@@ -1,6 +1,11 @@
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
-import { genderEnum, userProfile } from '@/lib/db/schema';
+import {
+  genderEnum,
+  sleepQualityEnum,
+  stressLevelEnum,
+  userProfile,
+} from '@/lib/db/schema';
 
 // Shared validation bounds (used by both server and form)
 export const PROFILE_BOUNDS = {
@@ -32,6 +37,33 @@ export const upsertProfileSchema = z.object({
     .nullable(),
   measurementSystem: z.enum(['metric', 'imperial']),
   dietaryPreferences: z.array(z.string()).nullable(),
+  // New fields for progressive profile completion
+  sleepHoursAverage: z
+    .number()
+    .min(4)
+    .max(12)
+    .nullable()
+    .transform((n) => n?.toString()),
+  sleepQuality: z.enum(sleepQualityEnum).nullable(),
+  typicalWakeTime: z.string().nullable(),
+  typicalBedTime: z.string().nullable(),
+  mealsPerDay: z.number().min(1).max(6).nullable(),
+  typicalMealTimes: z.array(z.string()).nullable(),
+  snackingHabits: z.string().nullable(),
+  supplementsMedications: z.string().nullable(),
+  healthConditions: z.array(z.string()).nullable(),
+  stressLevel: z.enum(stressLevelEnum).nullable(),
+  exerciseFrequency: z.string().nullable(),
+  exerciseTypes: z.array(z.string()).nullable(),
+  waterIntakeLiters: z
+    .number()
+    .min(0)
+    .max(5)
+    .nullable()
+    .transform((n) => n?.toString()),
+  garminConnected: z.boolean().optional(),
+  garminUserId: z.string().nullable(),
+  profileCompletionPercentage: z.number().min(0).max(100).optional(),
 });
 
 // Types derived from schemas

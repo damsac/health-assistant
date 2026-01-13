@@ -131,6 +131,22 @@ const createFormSchema = (
         dietaryPreferences: data.dietaryPreferences.length
           ? data.dietaryPreferences
           : null,
+        // Include all other fields with null defaults
+        sleepHoursAverage: null,
+        sleepQuality: null,
+        typicalWakeTime: null,
+        typicalBedTime: null,
+        mealsPerDay: null,
+        typicalMealTimes: null,
+        snackingHabits: null,
+        supplementsMedications: null,
+        healthConditions: null,
+        stressLevel: null,
+        exerciseFrequency: null,
+        exerciseTypes: null,
+        waterIntakeLiters: null,
+        garminConnected: false,
+        garminUserId: null,
       };
     });
 };
