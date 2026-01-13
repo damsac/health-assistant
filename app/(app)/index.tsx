@@ -116,6 +116,27 @@ export default function HomeScreen() {
           <Button onPress={() => router.push('/(app)/edit-profile')}>
             Edit Profile
           </Button>
+
+          {/* Dev-only reset button */}
+          {process.env.NODE_ENV === 'development' && (
+            <Button
+              theme="red"
+              onPress={async () => {
+                try {
+                  await fetch('/api/dev/reset-profile', {
+                    method: 'POST',
+                    credentials: 'include',
+                  });
+                  alert('Profile reset! Refreshing...');
+                  window.location.reload();
+                } catch (_error) {
+                  alert('Failed to reset profile');
+                }
+              }}
+            >
+              🔄 Reset Profile (Dev)
+            </Button>
+          )}
         </YStack>
 
         <YStack paddingVertical="$4">
