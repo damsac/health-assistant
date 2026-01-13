@@ -72,7 +72,13 @@ export function ProfileCompletionCard({
               key={section.key}
               variant="outlined"
               justifyContent="flex-start"
-              onPress={() => router.push(section.route as any)} // biome-ignore lint/suspicious/noExplicitAny: needed for dynamic routes
+              tag="a"
+              href={section.route}
+              onPress={(e: any) => {
+                e.preventDefault();
+                console.log('Navigating to:', section.route);
+                router.push(section.route as any);
+              }}
             >
               <XStack flex={1} alignItems="center" gap="$3">
                 <Text fontSize="$6">{section.icon}</Text>
