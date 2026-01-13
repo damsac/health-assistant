@@ -50,6 +50,13 @@ export const PATCH = withAuth(async (request, session) => {
       .where(eq(userProfile.userId, session.user.id))
       .returning();
 
+    if (!profile) {
+      return errorResponse(
+        'Profile not found. Please complete onboarding first.',
+        404,
+      );
+    }
+
     return json(profile);
   } catch (error) {
     console.error('Error updating profile:', error);
