@@ -94,8 +94,15 @@ const createFormSchema = (
         (n) => n === null || (n >= minW && n <= maxW),
         `${minW}-${maxW} ${isMetric ? 'kg' : 'lbs'}`,
       ),
-      gender: z.enum([...genderEnum, '']),
-      primaryGoals: z.array(z.string()).max(2, 'Select up to 2 goals'),
+      gender: z
+        .enum([...genderEnum, ''])
+        .optional()
+        .default(''),
+      primaryGoals: z
+        .array(z.string())
+        .max(2, 'Select up to 2 goals')
+        .optional()
+        .default([]),
       dietaryPreferences: z.array(z.string()),
       allergies: z.string().optional(),
       healthChallenge: z.string().optional(),
@@ -248,7 +255,7 @@ export default function OnboardingScreen() {
   };
 
   const toggleGoal = (goal: string) => {
-    const current = selectedGoals;
+    const current = selectedGoals ?? [];
     console.log('[Onboarding] toggleGoal called:', goal, 'current:', current);
     if (current.includes(goal)) {
       const newGoals = current.filter((g: string) => g !== goal);
@@ -500,7 +507,7 @@ export default function OnboardingScreen() {
                         key={goal}
                         size="$3"
                         onPress={() => toggleGoal(goal)}
-                        opacity={selectedGoals.includes(goal) ? 1 : 0.5}
+                        opacity={(selectedGoals ?? []).includes(goal) ? 1 : 0.5}
                         disabled={upsertProfile.isPending}
                       >
                         {goal}
