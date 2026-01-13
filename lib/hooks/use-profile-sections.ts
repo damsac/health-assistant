@@ -11,7 +11,7 @@ type ProfileSection = {
 };
 
 async function fetchProfileSections(): Promise<ProfileSection[]> {
-  const response = await fetch(`${config.agent.url}/api/profile-sections`, {
+  const response = await fetch(`${config.api.url}/api/profile-sections`, {
     credentials: 'include',
   });
 
@@ -24,7 +24,7 @@ async function fetchProfileSections(): Promise<ProfileSection[]> {
 
 async function fetchIncompleteSections(): Promise<Section[]> {
   const response = await fetch(
-    `${config.agent.url}/api/profile/incomplete-sections`,
+    `${config.api.url}/api/profile/incomplete-sections`,
     {
       credentials: 'include',
     },

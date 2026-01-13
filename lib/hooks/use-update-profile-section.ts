@@ -9,7 +9,7 @@ type UpdateProfileSectionRequest = {
 async function updateProfileSection(
   data: UpdateProfileSectionRequest,
 ): Promise<void> {
-  const response = await fetch(`${config.agent.url}/api/profile-sections`, {
+  const response = await fetch(`${config.api.url}/api/profile-sections`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
