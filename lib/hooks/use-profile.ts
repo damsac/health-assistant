@@ -6,13 +6,14 @@ import {
 } from '@tanstack/react-query';
 import type { ProfileApi } from '../api/profile';
 import type { ApiError } from '../api-middleware';
+import { config } from '../config';
 import { queryKeys } from '../query-client';
 
 type ProfileResponse = ProfileApi['GET']['response'];
 type UpsertProfileRequest = ProfileApi['PUT']['request'];
 
 async function fetchProfile(): Promise<ProfileResponse | null> {
-  const res = await fetch('/api/profile', {
+  const res = await fetch(`${config.agent.url}/api/profile`, {
     credentials: 'include',
   });
 
@@ -31,7 +32,7 @@ async function fetchProfile(): Promise<ProfileResponse | null> {
 async function upsertProfile(
   data: UpsertProfileRequest,
 ): Promise<ProfileResponse> {
-  const res = await fetch('/api/profile', {
+  const res = await fetch(`${config.agent.url}/api/profile`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
