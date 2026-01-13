@@ -72,7 +72,7 @@ export function ProfileCompletionCard({
               key={section.key}
               variant="outlined"
               justifyContent="flex-start"
-              onPress={() => router.push(section.route as any)}
+              onPress={() => router.push(section.route as any)} // biome-ignore lint/suspicious/noExplicitAny: needed for dynamic routes
             >
               <XStack flex={1} alignItems="center" gap="$3">
                 <Text fontSize="$6">{section.icon}</Text>
@@ -81,7 +81,7 @@ export function ProfileCompletionCard({
                     {section.title}
                   </Text>
                   <Text fontSize="$2" color="gray">
-                    {section.subtitle}
+                    {section.benefit}
                   </Text>
                 </YStack>
                 <Text fontSize="$6" color="gray">

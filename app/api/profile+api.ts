@@ -1,23 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { type ProfileResponse, upsertProfileSchema } from '@/lib/api/profile';
 import { errorResponse, json, parseBody, withAuth } from '@/lib/api-middleware';
-import { db, profileSection, userProfile } from '@/lib/db';
-
-// Calculate profile completion percentage based on completed sections
-async function calculateCompletionPercentage(userId: string): Promise<number> {
-  const sections = await db.query.profileSection.findMany({
-    where: eq(profileSection.userId, userId),
-  });
-
-  const sectionKeys = ['sleep', 'garmin', 'eating', 'supplements', 'lifestyle'];
-  const completedCount = sections.filter(
-    (s) => s.completed && sectionKeys.includes(s.sectionKey),
-  ).length;
-
-  // Base completion is 40% from onboarding
-  // Each completed section adds 12%
-  return Math.min(40 + completedCount * 12, 100);
-}
+import { db, userProfile } from '@/lib/db';
+import { calculateProfileCompletion } from '@/lib/profile-utils';
 
 export const GET = withAuth(async (_request, session) => {
   const profile = await db.query.userProfile.findFirst({
@@ -44,7 +29,7 @@ export const PUT = withAuth(async (request, session) => {
   });
 
   // Calculate completion percentage based on sections
-  const completionPercentage = await calculateCompletionPercentage(
+  const completionPercentage = await calculateProfileCompletion(
     session.user.id,
   );
 
