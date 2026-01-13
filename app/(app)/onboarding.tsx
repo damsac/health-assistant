@@ -222,10 +222,15 @@ export default function OnboardingScreen() {
   };
 
   const onSubmit = async (data: UpsertProfileRequest) => {
+    console.log('[Onboarding] Form submitted with data:', data);
     try {
-      await upsertProfile.mutateAsync(data);
+      console.log('[Onboarding] Calling upsertProfile...');
+      const result = await upsertProfile.mutateAsync(data);
+      console.log('[Onboarding] Profile created successfully:', result);
+      console.log('[Onboarding] Redirecting to home...');
       router.replace('/(app)');
-    } catch {
+    } catch (error) {
+      console.error('[Onboarding] Error creating profile:', error);
       // handled by mutation
     }
   };
