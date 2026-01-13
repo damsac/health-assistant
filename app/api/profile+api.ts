@@ -22,18 +22,29 @@ export const PUT = withAuth(async (request, session) => {
     return parsed.error;
   }
 
+  // Check if this is the first time completing the profile
+  const existingProfile = await db.query.userProfile.findFirst({
+    where: eq(userProfile.userId, session.user.id),
+  });
+
+  const updateData = {
+    ...parsed.data,
+    updatedAt: new Date(),
+    // Set completion percentage to 40 if this is onboarding
+    profileCompletionPercentage:
+      existingProfile?.profileCompletionPercentage ?? 40,
+  };
+
   const [profile] = await db
     .insert(userProfile)
     .values({
       userId: session.user.id,
       ...parsed.data,
+      profileCompletionPercentage: 40,
     })
     .onConflictDoUpdate({
       target: userProfile.userId,
-      set: {
-        ...parsed.data,
-        updatedAt: new Date(),
-      },
+      set: updateData,
     })
     .returning();
 
