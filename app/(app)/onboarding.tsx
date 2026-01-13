@@ -316,28 +316,36 @@ export default function OnboardingScreen() {
               <Controller
                 control={control}
                 name="gender"
-                render={({ field: { onChange, value } }) => (
-                  <XStack gap="$2" flexWrap="wrap">
-                    {genderEnum.map((g) => (
-                      <Button
-                        key={g}
-                        size="$3"
-                        onPress={() => {
-                          const newValue = value === g ? '' : g;
-                          console.log(
-                            '[Onboarding] Gender selected:',
-                            newValue,
-                          );
-                          onChange(newValue);
-                        }}
-                        opacity={value === g ? 1 : 0.5}
-                        disabled={upsertProfile.isPending}
-                      >
-                        {genderLabels[g]}
-                      </Button>
-                    ))}
-                  </XStack>
-                )}
+                render={({ field: { onChange, value } }) => {
+                  console.log(
+                    '[Onboarding] Rendering gender buttons, current value:',
+                    value,
+                  );
+                  return (
+                    <XStack gap="$2" flexWrap="wrap">
+                      {genderEnum.map((g) => (
+                        <Button
+                          key={g}
+                          size="$3"
+                          onPress={() => {
+                            const newValue = value === g ? '' : g;
+                            console.log(
+                              '[Onboarding] Gender button pressed:',
+                              g,
+                              'new value:',
+                              newValue,
+                            );
+                            onChange(newValue);
+                          }}
+                          opacity={value === g ? 1 : 0.5}
+                          disabled={upsertProfile.isPending}
+                        >
+                          {genderLabels[g]}
+                        </Button>
+                      ))}
+                    </XStack>
+                  );
+                }}
               />
             </YStack>
           </YStack>
