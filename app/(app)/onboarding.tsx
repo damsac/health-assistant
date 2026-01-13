@@ -229,15 +229,10 @@ export default function OnboardingScreen() {
   };
 
   const onSubmit = async (data: UpsertProfileRequest) => {
-    console.log('[Onboarding] Form submitted with data:', data);
     try {
-      console.log('[Onboarding] Calling upsertProfile...');
-      const result = await upsertProfile.mutateAsync(data);
-      console.log('[Onboarding] Profile created successfully:', result);
-      console.log('[Onboarding] Redirecting to home...');
+      await upsertProfile.mutateAsync(data);
       router.replace('/(app)');
-    } catch (error) {
-      console.error('[Onboarding] Error creating profile:', error);
+    } catch {
       // handled by mutation
     }
   };
@@ -256,17 +251,13 @@ export default function OnboardingScreen() {
 
   const toggleGoal = (goal: string) => {
     const current = selectedGoals ?? [];
-    console.log('[Onboarding] toggleGoal called:', goal, 'current:', current);
     if (current.includes(goal)) {
-      const newGoals = current.filter((g: string) => g !== goal);
-      console.log('[Onboarding] Removing goal, new goals:', newGoals);
-      setValue('primaryGoals', newGoals);
+      setValue(
+        'primaryGoals',
+        current.filter((g: string) => g !== goal),
+      );
     } else if (current.length < 2) {
-      const newGoals = [...current, goal];
-      console.log('[Onboarding] Adding goal, new goals:', newGoals);
-      setValue('primaryGoals', newGoals);
-    } else {
-      console.log('[Onboarding] Cannot add goal, already have 2');
+      setValue('primaryGoals', [...current, goal]);
     }
   };
 
@@ -323,36 +314,21 @@ export default function OnboardingScreen() {
               <Controller
                 control={control}
                 name="gender"
-                render={({ field: { onChange, value } }) => {
-                  console.log(
-                    '[Onboarding] Rendering gender buttons, current value:',
-                    value,
-                  );
-                  return (
-                    <XStack gap="$2" flexWrap="wrap">
-                      {genderEnum.map((g) => (
-                        <Button
-                          key={g}
-                          size="$3"
-                          onPress={() => {
-                            const newValue = value === g ? '' : g;
-                            console.log(
-                              '[Onboarding] Gender button pressed:',
-                              g,
-                              'new value:',
-                              newValue,
-                            );
-                            onChange(newValue);
-                          }}
-                          opacity={value === g ? 1 : 0.5}
-                          disabled={upsertProfile.isPending}
-                        >
-                          {genderLabels[g]}
-                        </Button>
-                      ))}
-                    </XStack>
-                  );
-                }}
+                render={({ field: { onChange, value } }) => (
+                  <XStack gap="$2" flexWrap="wrap">
+                    {genderEnum.map((g) => (
+                      <Button
+                        key={g}
+                        size="$3"
+                        onPress={() => onChange(value === g ? '' : g)}
+                        opacity={value === g ? 1 : 0.5}
+                        disabled={upsertProfile.isPending}
+                      >
+                        {genderLabels[g]}
+                      </Button>
+                    ))}
+                  </XStack>
+                )}
               />
             </YStack>
           </YStack>
@@ -680,17 +656,9 @@ export default function OnboardingScreen() {
             </Button>
           ) : (
             <Button
-              onPress={() => {
-                console.log('[Onboarding] Complete Profile button clicked!');
-                console.log('[Onboarding] Form errors:', errors);
-                console.log('[Onboarding] Form values:', getValues());
-                handleSubmit(
-                  onSubmit as unknown as SubmitHandler<FormInput>,
-                  (errors) => {
-                    console.error('[Onboarding] Validation failed:', errors);
-                  },
-                )();
-              }}
+              onPress={handleSubmit(
+                onSubmit as unknown as SubmitHandler<FormInput>,
+              )}
               disabled={upsertProfile.isPending}
             >
               {upsertProfile.isPending ? (
