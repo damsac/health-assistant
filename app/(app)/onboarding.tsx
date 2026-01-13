@@ -637,7 +637,14 @@ export default function OnboardingScreen() {
             <Button
               onPress={() => {
                 console.log('[Onboarding] Complete Profile button clicked!');
-                handleSubmit(onSubmit as unknown as SubmitHandler<FormInput>)();
+                console.log('[Onboarding] Form errors:', errors);
+                console.log('[Onboarding] Form values:', getValues());
+                handleSubmit(
+                  onSubmit as unknown as SubmitHandler<FormInput>,
+                  (errors) => {
+                    console.error('[Onboarding] Validation failed:', errors);
+                  },
+                )();
               }}
               disabled={upsertProfile.isPending}
             >
