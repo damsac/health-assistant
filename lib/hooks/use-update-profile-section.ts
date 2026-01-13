@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { config } from '../config';
 
 type UpdateProfileSectionRequest = {
   sectionKey: string;
@@ -9,7 +8,7 @@ type UpdateProfileSectionRequest = {
 async function updateProfileSection(
   data: UpdateProfileSectionRequest,
 ): Promise<void> {
-  const response = await fetch(`${config.api.url}/api/profile-sections`, {
+  const response = await fetch('/api/profile-sections', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { config } from '../config';
 
 type PartialProfileUpdate = {
   sleepHoursAverage?: number;
@@ -19,7 +18,7 @@ type PartialProfileUpdate = {
 };
 
 async function updatePartialProfile(data: PartialProfileUpdate): Promise<void> {
-  const response = await fetch(`${config.api.url}/api/profile/partial`, {
+  const response = await fetch('/api/profile/partial', {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',

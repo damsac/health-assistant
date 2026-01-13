@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import type { Section } from '@/lib/profile-utils';
-import { config } from '../config';
 
 type ProfileSection = {
   id: string;
@@ -11,7 +10,7 @@ type ProfileSection = {
 };
 
 async function fetchProfileSections(): Promise<ProfileSection[]> {
-  const response = await fetch(`${config.api.url}/api/profile-sections`, {
+  const response = await fetch('/api/profile-sections', {
     credentials: 'include',
   });
 
@@ -23,12 +22,9 @@ async function fetchProfileSections(): Promise<ProfileSection[]> {
 }
 
 async function fetchIncompleteSections(): Promise<Section[]> {
-  const response = await fetch(
-    `${config.api.url}/api/profile/incomplete-sections`,
-    {
-      credentials: 'include',
-    },
-  );
+  const response = await fetch('/api/profile/incomplete-sections', {
+    credentials: 'include',
+  });
 
   if (!response.ok) {
     throw new Error('Failed to fetch incomplete sections');
