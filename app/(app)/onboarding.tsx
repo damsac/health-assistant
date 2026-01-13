@@ -249,13 +249,17 @@ export default function OnboardingScreen() {
 
   const toggleGoal = (goal: string) => {
     const current = selectedGoals;
+    console.log('[Onboarding] toggleGoal called:', goal, 'current:', current);
     if (current.includes(goal)) {
-      setValue(
-        'primaryGoals',
-        current.filter((g: string) => g !== goal),
-      );
+      const newGoals = current.filter((g: string) => g !== goal);
+      console.log('[Onboarding] Removing goal, new goals:', newGoals);
+      setValue('primaryGoals', newGoals);
     } else if (current.length < 2) {
-      setValue('primaryGoals', [...current, goal]);
+      const newGoals = [...current, goal];
+      console.log('[Onboarding] Adding goal, new goals:', newGoals);
+      setValue('primaryGoals', newGoals);
+    } else {
+      console.log('[Onboarding] Cannot add goal, already have 2');
     }
   };
 
