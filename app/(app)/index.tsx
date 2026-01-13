@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ProfileCompletionCard } from '@/components/ProfileCompletionCard';
 import { Button, H1, H2, Text, YStack } from '@/components/ui';
 import { useSession, useSignOut } from '@/lib/hooks/use-auth';
 import { useProfile } from '@/lib/hooks/use-profile';
@@ -65,6 +66,9 @@ export default function HomeScreen() {
         gap="$4"
       >
         <H1>Home</H1>
+
+        {/* Profile Completion Card */}
+        <ProfileCompletionCard />
 
         <YStack gap="$2">
           <H2>User</H2>
