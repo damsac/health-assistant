@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProfileForm } from '@/components/ProfileForm';
 import { Button, Card, H1, H2, Text, XStack, YStack } from '@/components/ui';
 import { useProfile } from '@/lib/hooks/use-profile';
-import { getAllSections } from '@/lib/profile-utils';
+import { getAllSections } from '@/lib/profile-sections-config';
 
 export default function EditProfileScreen() {
   const insets = useSafeAreaInsets();

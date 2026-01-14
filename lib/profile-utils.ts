@@ -1,51 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { db, profileSection, userProfile } from '@/lib/db';
-
-export interface Section {
-  key: string;
-  title: string;
-  benefit: string;
-  icon: string;
-  route: string;
-}
-
-const SECTIONS_CONFIG: Section[] = [
-  {
-    key: 'sleep',
-    title: 'Sleep Patterns',
-    benefit: 'Better energy advice',
-    icon: '🌙',
-    route: '/(app)/(profile)/sleep',
-  },
-  {
-    key: 'garmin',
-    title: 'Connect Garmin',
-    benefit: 'Real-time health insights',
-    icon: '⌚',
-    route: '/(app)/(profile)/garmin',
-  },
-  {
-    key: 'eating',
-    title: 'Eating Schedule',
-    benefit: 'Optimize meal timing',
-    icon: '🍽️',
-    route: '/(app)/(profile)/eating',
-  },
-  {
-    key: 'supplements',
-    title: 'Supplements & Medications',
-    benefit: 'Avoid interactions',
-    icon: '💊',
-    route: '/(app)/(profile)/supplements',
-  },
-  {
-    key: 'lifestyle',
-    title: 'Stress & Lifestyle',
-    benefit: 'Holistic wellness view',
-    icon: '🧘',
-    route: '/(app)/(profile)/lifestyle',
-  },
-];
+import type { Section } from '@/lib/profile-sections-config';
+import { SECTIONS_CONFIG } from '@/lib/profile-sections-config';
 
 /**
  * Calculate profile completion percentage for a user
@@ -181,6 +137,9 @@ export async function isOnboardingComplete(userId: string): Promise<boolean> {
 export function getAllSections(): Section[] {
   return SECTIONS_CONFIG;
 }
+
+// Re-export for convenience
+export type { Section };
 
 /**
  * Check if a specific section is complete for a user
