@@ -136,15 +136,35 @@ export async function markSectionComplete(
 export async function getIncompleteSections(
   userId: string,
 ): Promise<Section[]> {
+  console.log('[getIncompleteSections] Fetching sections for user:', userId);
   const sections = await db.query.profileSection.findMany({
     where: eq(profileSection.userId, userId),
   });
+
+  console.log('[getIncompleteSections] Found sections in DB:', sections);
 
   const completedKeys = new Set(
     sections.filter((s) => s.completed).map((s) => s.sectionKey),
   );
 
-  return SECTIONS_CONFIG.filter((section) => !completedKeys.has(section.key));
+  console.log(
+    '[getIncompleteSections] Completed keys:',
+    Array.from(completedKeys),
+  );
+  console.log(
+    '[getIncompleteSections] All available sections:',
+    SECTIONS_CONFIG.map((s) => s.key),
+  );
+
+  const incomplete = SECTIONS_CONFIG.filter(
+    (section) => !completedKeys.has(section.key),
+  );
+  console.log(
+    '[getIncompleteSections] Returning incomplete sections:',
+    incomplete.map((s) => s.key),
+  );
+
+  return incomplete;
 }
 
 /**
