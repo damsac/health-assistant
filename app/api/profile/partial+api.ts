@@ -51,7 +51,6 @@ export const PATCH = withAuth(async (request, session) => {
   }
 
   try {
-    console.log('[partial-update] Updating profile with data:', updateData);
     const [profile] = await db
       .update(userProfile)
       .set(updateData)
@@ -59,25 +58,15 @@ export const PATCH = withAuth(async (request, session) => {
       .returning();
 
     if (!profile) {
-      console.error(
-        '[partial-update] Profile not found for user:',
-        session.user.id,
-      );
       return errorResponse(
         'Profile not found. Please complete onboarding first.',
         404,
       );
     }
 
-    console.log('[partial-update] Profile updated successfully');
     return json(profile);
   } catch (error) {
-    console.error('[partial-update] Error updating profile:', error);
-    console.error(
-      '[partial-update] Error details:',
-      error instanceof Error ? error.message : String(error),
-    );
-    console.error('[partial-update] Update data was:', updateData);
+    console.error('Error updating profile:', error);
     return errorResponse('Failed to update profile', 500);
   }
 });
