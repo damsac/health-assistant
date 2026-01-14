@@ -18,6 +18,10 @@ type PartialProfileUpdate = {
 };
 
 async function updatePartialProfile(data: PartialProfileUpdate): Promise<void> {
+  console.log(
+    '[usePartialProfileUpdate] Sending PATCH to /api/profile/partial with data:',
+    data,
+  );
   const response = await fetch('/api/profile/partial', {
     method: 'PATCH',
     headers: {
@@ -27,9 +31,18 @@ async function updatePartialProfile(data: PartialProfileUpdate): Promise<void> {
     body: JSON.stringify(data),
   });
 
+  console.log('[usePartialProfileUpdate] Response status:', response.status);
+
   if (!response.ok) {
-    throw new Error('Failed to update profile');
+    const errorText = await response.text();
+    console.error('[usePartialProfileUpdate] Error response:', errorText);
+    throw new Error(
+      `Failed to update profile: ${response.status} ${errorText}`,
+    );
   }
+
+  const result = await response.json();
+  console.log('[usePartialProfileUpdate] Success response:', result);
 }
 
 export function usePartialProfileUpdate() {

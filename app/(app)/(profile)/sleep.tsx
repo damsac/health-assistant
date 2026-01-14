@@ -59,28 +59,33 @@ export default function SleepPatternsScreen() {
   const _sleepQuality = watch('sleepQuality');
 
   const onSubmit = async (data: FormData) => {
+    console.log('[Sleep] Form submitted with data:', data);
     setIsSaving(true);
     try {
-      // Update profile
+      console.log('[Sleep] Calling updateProfile.mutateAsync...');
       await updateProfile.mutateAsync({
         sleepHoursAverage: data.sleepHoursAverage,
         sleepQuality: data.sleepQuality,
         typicalWakeTime: data.typicalWakeTime,
         typicalBedTime: data.typicalBedTime,
       });
+      console.log('[Sleep] Profile updated successfully');
 
-      // Mark section as complete
+      console.log('[Sleep] Marking section as complete...');
       await updateSection.mutateAsync({
         sectionKey: 'sleep',
         completed: true,
       });
+      console.log('[Sleep] Section marked as complete');
 
-      // Show success message
       alert('Sleep patterns saved successfully!');
       router.back();
     } catch (error) {
-      console.error('Error saving sleep patterns:', error);
-      alert('Failed to save sleep patterns. Please try again.');
+      console.error('[Sleep] Error saving sleep patterns:', error);
+      console.error('[Sleep] Error details:', JSON.stringify(error, null, 2));
+      alert(
+        `Failed to save sleep patterns: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     } finally {
       setIsSaving(false);
     }
