@@ -15,7 +15,17 @@ export function ProfileCompletionCard({
   const { data: profile } = useProfile();
   const { incompleteSections, isLoading } = useProfileSections();
 
+  console.log('[ProfileCompletionCard] Rendering:', {
+    isLoading,
+    profile: !!profile,
+    incompleteSectionsCount: incompleteSections.length,
+    incompleteSections,
+  });
+
   if (isLoading || !profile) {
+    console.log(
+      '[ProfileCompletionCard] Not rendering - loading or no profile',
+    );
     return null;
   }
 
@@ -25,6 +35,9 @@ export function ProfileCompletionCard({
     : incompleteSections.slice(0, 3);
 
   if (incompleteSections.length === 0) {
+    console.log(
+      '[ProfileCompletionCard] Not rendering - no incomplete sections',
+    );
     return null;
   }
 
