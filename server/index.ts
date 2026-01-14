@@ -37,5 +37,3 @@ serve({
   fetch: app.fetch,
   port,
 });
-
-export default app;
