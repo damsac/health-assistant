@@ -35,9 +35,16 @@ export const POST = withAuth(async (request, session) => {
   const { sectionKey, completed } = parsed.data;
 
   try {
+    console.log('[profile-sections] Updating section:', {
+      userId: session.user.id,
+      sectionKey,
+      completed,
+    });
     if (completed) {
       // Mark section as complete and update percentage
+      console.log('[profile-sections] Calling markSectionComplete...');
       await markSectionComplete(session.user.id, sectionKey);
+      console.log('[profile-sections] Section marked complete successfully');
     } else {
       // Mark section as incomplete (set completed to false)
       await db
@@ -76,7 +83,14 @@ export const POST = withAuth(async (request, session) => {
 
     return json(sections[sections.length - 1]); // Return the last updated section
   } catch (error) {
-    console.error('Error updating profile section:', error);
-    return errorResponse('Failed to update profile section', 500);
+    console.error('[profile-sections] Error updating profile section:', error);
+    console.error(
+      '[profile-sections] Error stack:',
+      error instanceof Error ? error.stack : 'No stack trace',
+    );
+    return errorResponse(
+      `Failed to update profile section: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      500,
+    );
   }
 });
