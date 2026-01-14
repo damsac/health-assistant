@@ -43,6 +43,13 @@
       "when": 1768269612235,
       "tag": "0005_dark_skullbuster",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1768351332204,
+      "tag": "0006_melted_proteus",
+      "breakpoints": true
     }
   ]
 }

@@ -7,6 +7,7 @@ import {
   text,
   time,
   timestamp,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 
@@ -234,6 +235,6 @@ export const profileSection = pgTable(
   },
   (table) => [
     index('idx_profile_section_user_id').on(table.userId),
-    index('idx_profile_section_user_key').on(table.userId, table.sectionKey),
+    uniqueIndex('unique_user_section').on(table.userId, table.sectionKey),
   ],
 );
