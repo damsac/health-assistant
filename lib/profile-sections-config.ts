@@ -1,11 +1,28 @@
+/**
+ * Profile section configuration
+ * Defines the available profile sections that users can complete
+ */
+
+/**
+ * Represents a profile section that can be completed by the user
+ */
 export interface Section {
+  /** Unique identifier for the section */
   key: string;
+  /** Display title for the section */
   title: string;
+  /** Description of the benefit of completing this section */
   benefit: string;
+  /** Emoji icon representing the section */
   icon: string;
+  /** Navigation route to the section's form */
   route: string;
 }
 
+/**
+ * Configuration for all available profile sections
+ * These sections can be completed to improve the user's profile and get better health insights
+ */
 export const SECTIONS_CONFIG: Section[] = [
   {
     key: 'sleep',
@@ -44,6 +61,10 @@ export const SECTIONS_CONFIG: Section[] = [
   },
 ];
 
+/**
+ * Get all available profile sections
+ * @returns Array of all profile section configurations
+ */
 export function getAllSections(): Section[] {
   return SECTIONS_CONFIG;
 }

@@ -10,6 +10,13 @@ import { usePartialProfileUpdate } from '@/lib/hooks/use-partial-profile-update'
 import { useProfile } from '@/lib/hooks/use-profile';
 import { useUpdateProfileSection } from '@/lib/hooks/use-update-profile-section';
 
+/**
+ * Sleep Patterns Screen
+ * Allows users to input their sleep habits including average hours, quality,
+ * typical bed time, and wake time. This information is used to provide
+ * personalized energy and wellness recommendations.
+ */
+
 const sleepQualityEnum = ['poor', 'fair', 'good', 'excellent'] as const;
 type SleepQuality = (typeof sleepQualityEnum)[number];
 
@@ -59,30 +66,24 @@ export default function SleepPatternsScreen() {
   const _sleepQuality = watch('sleepQuality');
 
   const onSubmit = async (data: FormData) => {
-    console.log('[Sleep] Form submitted with data:', data);
     setIsSaving(true);
     try {
-      console.log('[Sleep] Calling updateProfile.mutateAsync...');
       await updateProfile.mutateAsync({
         sleepHoursAverage: data.sleepHoursAverage,
         sleepQuality: data.sleepQuality,
         typicalWakeTime: data.typicalWakeTime,
         typicalBedTime: data.typicalBedTime,
       });
-      console.log('[Sleep] Profile updated successfully');
 
-      console.log('[Sleep] Marking section as complete...');
       await updateSection.mutateAsync({
         sectionKey: 'sleep',
         completed: true,
       });
-      console.log('[Sleep] Section marked as complete');
 
       alert('Sleep patterns saved successfully!');
       router.back();
     } catch (error) {
-      console.error('[Sleep] Error saving sleep patterns:', error);
-      console.error('[Sleep] Error details:', JSON.stringify(error, null, 2));
+      console.error('Error saving sleep patterns:', error);
       alert(
         `Failed to save sleep patterns: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );

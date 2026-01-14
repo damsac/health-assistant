@@ -34,54 +34,35 @@ export async function markSectionComplete(
   userId: string,
   sectionKey: string,
 ): Promise<void> {
-  console.log('[markSectionComplete] Starting transaction for:', {
-    userId,
-    sectionKey,
-  });
-  try {
-    await db.transaction(async (tx) => {
-      console.log('[markSectionComplete] Inserting/updating section...');
-      // Insert or update the section as completed
-      await tx
-        .insert(profileSection)
-        .values({
-          userId,
-          sectionKey,
+  await db.transaction(async (tx) => {
+    // Insert or update the section as completed
+    await tx
+      .insert(profileSection)
+      .values({
+        userId,
+        sectionKey,
+        completed: true,
+        completedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: [profileSection.userId, profileSection.sectionKey],
+        set: {
           completed: true,
           completedAt: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: [profileSection.userId, profileSection.sectionKey],
-          set: {
-            completed: true,
-            completedAt: new Date(),
-          },
-        });
+        },
+      });
 
-      console.log(
-        '[markSectionComplete] Section inserted/updated, calculating completion...',
-      );
-      // Calculate and update the profile completion percentage
-      const completionPercentage = await calculateProfileCompletion(userId);
-      console.log(
-        '[markSectionComplete] Completion percentage:',
-        completionPercentage,
-      );
+    // Calculate and update the profile completion percentage
+    const completionPercentage = await calculateProfileCompletion(userId);
 
-      console.log('[markSectionComplete] Updating user profile...');
-      await tx
-        .update(userProfile)
-        .set({
-          profileCompletionPercentage: completionPercentage,
-          updatedAt: new Date(),
-        })
-        .where(eq(userProfile.userId, userId));
-      console.log('[markSectionComplete] Transaction complete');
-    });
-  } catch (error) {
-    console.error('[markSectionComplete] Transaction failed:', error);
-    throw error;
-  }
+    await tx
+      .update(userProfile)
+      .set({
+        profileCompletionPercentage: completionPercentage,
+        updatedAt: new Date(),
+      })
+      .where(eq(userProfile.userId, userId));
+  });
 }
 
 /**

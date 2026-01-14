@@ -12,31 +12,20 @@ type ProfileResponse = ProfileApi['GET']['response'];
 type UpsertProfileRequest = ProfileApi['PUT']['request'];
 
 async function fetchProfile(): Promise<ProfileResponse | null> {
-  console.log('[fetchProfile] Starting fetch to /api/profile');
-  try {
-    const res = await fetch('/api/profile', {
-      credentials: 'include',
-    });
-    console.log('[fetchProfile] Response status:', res.status);
+  const res = await fetch('/api/profile', {
+    credentials: 'include',
+  });
 
-    if (res.status === 404) {
-      console.log('[fetchProfile] Profile not found (404), returning null');
-      return null;
-    }
-
-    if (!res.ok) {
-      const error: ApiError = await res.json();
-      console.error('[fetchProfile] Error response:', error);
-      throw new Error(error.error);
-    }
-
-    const data = await res.json();
-    console.log('[fetchProfile] Success, profile data:', data);
-    return data;
-  } catch (error) {
-    console.error('[fetchProfile] Fetch error:', error);
-    throw error;
+  if (res.status === 404) {
+    return null;
   }
+
+  if (!res.ok) {
+    const error: ApiError = await res.json();
+    throw new Error(error.error);
+  }
+
+  return res.json();
 }
 
 async function upsertProfile(

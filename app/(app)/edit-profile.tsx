@@ -6,6 +6,11 @@ import { Button, Card, H1, H2, Text, XStack, YStack } from '@/components/ui';
 import { useProfile } from '@/lib/hooks/use-profile';
 import { getAllSections } from '@/lib/profile-sections-config';
 
+/**
+ * Edit Profile Screen
+ * Allows users to update their basic profile information and access additional profile sections
+ * for updating health-related data (sleep, eating, supplements, lifestyle, Garmin)
+ */
 export default function EditProfileScreen() {
   const insets = useSafeAreaInsets();
   const { data: profile, isLoading } = useProfile();
