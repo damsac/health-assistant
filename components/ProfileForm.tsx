@@ -1,3 +1,10 @@
+/**
+ * ProfileForm Component
+ * Reusable form for editing user profile information including height, weight,
+ * gender, date of birth, and dietary preferences. Supports both metric and imperial
+ * measurement systems with automatic conversion.
+ */
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';

@@ -1,3 +1,9 @@
+/**
+ * Profile Sections API
+ * Manages the completion status of profile sections (sleep, eating, supplements, etc.)
+ * Tracks which sections users have completed and calculates overall profile completion percentage.
+ */
+
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { errorResponse, json, parseBody, withAuth } from '@/lib/api-middleware';

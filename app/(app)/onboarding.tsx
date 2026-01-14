@@ -1,3 +1,10 @@
+/**
+ * Onboarding Screen
+ * Multi-step form for collecting user's basic health profile information
+ * including age, height, weight, gender, goals, and dietary preferences.
+ * Uses React Hook Form with Zod validation for type-safe form handling.
+ */
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';

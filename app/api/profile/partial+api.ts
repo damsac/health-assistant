@@ -1,3 +1,10 @@
+/**
+ * Partial Profile Update API
+ * Allows updating specific profile fields without requiring all fields to be present.
+ * Used by profile section forms (sleep, eating, supplements, lifestyle) to update
+ * only the relevant fields without overwriting the entire profile.
+ */
+
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { errorResponse, json, parseBody, withAuth } from '@/lib/api-middleware';
