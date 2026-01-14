@@ -150,7 +150,8 @@ type ProfileFormProps = {
   submitLabel?: string;
 };
 
-function formatDateForInput(date: Date | string): string {
+function formatDateForInput(date: Date | string | null): string {
+  if (!date) return '';
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   return `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
 }
