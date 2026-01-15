@@ -6,8 +6,7 @@ import { ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 import { Button, Input, Spinner, Text, XStack, YStack } from '@/components/ui';
-import { usePartialProfileUpdate } from '@/lib/hooks/use-partial-profile-update';
-import { useProfile } from '@/lib/hooks/use-profile';
+import { useProfile, useUpsertProfile } from '@/lib/hooks/use-profile';
 
 /**
  * Sleep Patterns Screen
@@ -38,7 +37,7 @@ const sleepQualityLabels: Record<SleepQuality, string> = {
 export default function SleepPatternsScreen() {
   const insets = useSafeAreaInsets();
   const { data: profile } = useProfile();
-  const updateProfile = usePartialProfileUpdate();
+  const upsertProfile = useUpsertProfile();
   const [isSaving, setIsSaving] = useState(false);
 
   const {
@@ -64,7 +63,7 @@ export default function SleepPatternsScreen() {
   const onSubmit = async (data: FormData) => {
     setIsSaving(true);
     try {
-      await updateProfile.mutateAsync({
+      await upsertProfile.mutateAsync({
         sleepHoursAverage: data.sleepHoursAverage,
         sleepQuality: data.sleepQuality,
         typicalWakeTime: data.typicalWakeTime,

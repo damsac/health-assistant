@@ -6,8 +6,7 @@ import { ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 import { Button, Input, Spinner, Text, XStack, YStack } from '@/components/ui';
-import { usePartialProfileUpdate } from '@/lib/hooks/use-partial-profile-update';
-import { useProfile } from '@/lib/hooks/use-profile';
+import { useProfile, useUpsertProfile } from '@/lib/hooks/use-profile';
 
 const formSchema = z.object({
   supplementsMedications: z.string().optional(),
@@ -18,7 +17,7 @@ type FormData = z.infer<typeof formSchema>;
 export default function SupplementsScreen() {
   const insets = useSafeAreaInsets();
   const { data: profile } = useProfile();
-  const updateProfile = usePartialProfileUpdate();
+  const upsertProfile = useUpsertProfile();
   const [isSaving, setIsSaving] = useState(false);
 
   const {
@@ -35,9 +34,8 @@ export default function SupplementsScreen() {
   const onSubmit = async (data: FormData) => {
     setIsSaving(true);
     try {
-      // Update profile
-      await updateProfile.mutateAsync({
-        supplementsMedications: data.supplementsMedications || null,
+      await upsertProfile.mutateAsync({
+        supplementsMedications: data.supplementsMedications,
       });
 
       // Show success message

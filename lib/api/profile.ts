@@ -16,55 +16,57 @@ export const PROFILE_BOUNDS = {
 } as const;
 
 // Server-side validation schema (transforms dateOfBirth string to Date for DB)
-export const upsertProfileSchema = z.object({
-  heightCm: z
-    .number()
-    .int()
-    .min(PROFILE_BOUNDS.heightCm.min)
-    .max(PROFILE_BOUNDS.heightCm.max)
-    .nullable(),
-  weightGrams: z
-    .number()
-    .int()
-    .min(PROFILE_BOUNDS.weightKg.min * 1000)
-    .max(PROFILE_BOUNDS.weightKg.max * 1000)
-    .nullable(),
-  gender: z.enum(genderEnum).nullable(),
-  dateOfBirth: z
-    .string()
-    .datetime()
-    .transform((s) => new Date(s))
-    .nullable(),
-  measurementSystem: z.enum(['metric', 'imperial']),
-  dietaryPreferences: z.array(z.string()).nullable(),
-  // New fields for progressive profile completion
-  sleepHoursAverage: z
-    .number()
-    .min(4)
-    .max(12)
-    .nullable()
-    .transform((n) => n?.toString()),
-  sleepQuality: z.enum(sleepQualityEnum).nullable(),
-  typicalWakeTime: z.string().nullable(),
-  typicalBedTime: z.string().nullable(),
-  mealsPerDay: z.number().min(1).max(6).nullable(),
-  typicalMealTimes: z.array(z.string()).nullable(),
-  snackingHabits: z.string().nullable(),
-  supplementsMedications: z.string().nullable(),
-  healthConditions: z.array(z.string()).nullable(),
-  stressLevel: z.enum(stressLevelEnum).nullable(),
-  exerciseFrequency: z.string().nullable(),
-  exerciseTypes: z.array(z.string()).nullable(),
-  waterIntakeLiters: z
-    .number()
-    .min(0)
-    .max(5)
-    .nullable()
-    .transform((n) => n?.toString()),
-  garminConnected: z.boolean().optional(),
-  garminUserId: z.string().nullable(),
-  profileCompletionPercentage: z.number().min(0).max(100).optional(),
-});
+export const upsertProfileSchema = z
+  .object({
+    heightCm: z
+      .number()
+      .int()
+      .min(PROFILE_BOUNDS.heightCm.min)
+      .max(PROFILE_BOUNDS.heightCm.max)
+      .nullable(),
+    weightGrams: z
+      .number()
+      .int()
+      .min(PROFILE_BOUNDS.weightKg.min * 1000)
+      .max(PROFILE_BOUNDS.weightKg.max * 1000)
+      .nullable(),
+    gender: z.enum(genderEnum).nullable(),
+    dateOfBirth: z
+      .string()
+      .datetime()
+      .transform((s) => new Date(s))
+      .nullable(),
+    measurementSystem: z.enum(['metric', 'imperial']),
+    dietaryPreferences: z.array(z.string()).nullable(),
+    // New fields for progressive profile completion
+    sleepHoursAverage: z
+      .number()
+      .min(4)
+      .max(12)
+      .nullable()
+      .transform((n) => n?.toString()),
+    sleepQuality: z.enum(sleepQualityEnum).nullable(),
+    typicalWakeTime: z.string().nullable(),
+    typicalBedTime: z.string().nullable(),
+    mealsPerDay: z.number().min(1).max(6).nullable(),
+    typicalMealTimes: z.array(z.string()).nullable(),
+    snackingHabits: z.string().nullable(),
+    supplementsMedications: z.string().nullable(),
+    healthConditions: z.array(z.string()).nullable(),
+    stressLevel: z.enum(stressLevelEnum).nullable(),
+    exerciseFrequency: z.string().nullable(),
+    exerciseTypes: z.array(z.string()).nullable(),
+    waterIntakeLiters: z
+      .number()
+      .min(0)
+      .max(5)
+      .nullable()
+      .transform((n) => n?.toString()),
+    garminConnected: z.boolean().optional(),
+    garminUserId: z.string().nullable(),
+    profileCompletionPercentage: z.number().min(0).max(100).optional(),
+  })
+  .partial();
 
 // Types derived from schemas
 const selectSchema = createSelectSchema(userProfile);

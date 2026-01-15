@@ -3,13 +3,12 @@ import { useState } from 'react';
 import { ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Spinner, Text, XStack, YStack } from '@/components/ui';
-import { usePartialProfileUpdate } from '@/lib/hooks/use-partial-profile-update';
-import { useProfile } from '@/lib/hooks/use-profile';
+import { useProfile, useUpsertProfile } from '@/lib/hooks/use-profile';
 
 export default function GarminConnectionScreen() {
   const insets = useSafeAreaInsets();
   const { data: profile } = useProfile();
-  const updateProfile = usePartialProfileUpdate();
+  const upsertProfile = useUpsertProfile();
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
 
@@ -20,7 +19,7 @@ export default function GarminConnectionScreen() {
     try {
       // TODO: Implement actual OAuth flow
       // For now, just mark as connected in the database
-      await updateProfile.mutateAsync({
+      await upsertProfile.mutateAsync({
         garminConnected: true,
         garminUserId: 'temp-user-id', // Will be replaced with actual Garmin user ID
       });
@@ -39,7 +38,7 @@ export default function GarminConnectionScreen() {
   const handleDisconnect = async () => {
     setIsDisconnecting(true);
     try {
-      await updateProfile.mutateAsync({
+      await upsertProfile.mutateAsync({
         garminConnected: false,
         garminUserId: null,
       });

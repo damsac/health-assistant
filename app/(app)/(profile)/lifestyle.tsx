@@ -6,8 +6,7 @@ import { ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 import { Button, Spinner, Text, XStack, YStack } from '@/components/ui';
-import { usePartialProfileUpdate } from '@/lib/hooks/use-partial-profile-update';
-import { useProfile } from '@/lib/hooks/use-profile';
+import { useProfile, useUpsertProfile } from '@/lib/hooks/use-profile';
 
 const stressLevelEnum = ['low', 'moderate', 'high'] as const;
 type StressLevel = (typeof stressLevelEnum)[number];
@@ -63,7 +62,7 @@ const exerciseTypeLabels: Record<(typeof exerciseTypesEnum)[number], string> = {
 export default function LifestyleScreen() {
   const insets = useSafeAreaInsets();
   const { data: profile } = useProfile();
-  const updateProfile = usePartialProfileUpdate();
+  const upsertProfile = useUpsertProfile();
   const [isSaving, setIsSaving] = useState(false);
 
   const {
@@ -102,7 +101,7 @@ export default function LifestyleScreen() {
     setIsSaving(true);
     try {
       // Update profile
-      await updateProfile.mutateAsync({
+      await upsertProfile.mutateAsync({
         stressLevel: data.stressLevel,
         exerciseFrequency: data.exerciseFrequency,
         exerciseTypes: data.exerciseTypes,
