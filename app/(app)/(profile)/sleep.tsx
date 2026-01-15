@@ -24,7 +24,6 @@ const formSchema = z.object({
   sleepQuality: z.enum(sleepQualityEnum),
   typicalWakeTime: z.string(),
   typicalBedTime: z.string(),
-  sleepNotes: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -56,7 +55,6 @@ export default function SleepPatternsScreen() {
       sleepQuality: (profile?.sleepQuality as SleepQuality) || 'good',
       typicalWakeTime: profile?.typicalWakeTime || '07:00',
       typicalBedTime: profile?.typicalBedTime || '23:00',
-      sleepNotes: '',
     },
   });
 
@@ -223,28 +221,6 @@ export default function SleepPatternsScreen() {
                 {errors.typicalBedTime.message}
               </Text>
             )}
-          </YStack>
-
-          {/* Optional Notes */}
-          <YStack gap="$2">
-            <Text fontSize="$4" fontWeight="600">
-              Notes (Optional)
-            </Text>
-            <Controller
-              control={control}
-              name="sleepNotes"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  multiline
-                  numberOfLines={4}
-                  textAlignVertical="top"
-                  placeholder="Any sleep patterns, issues, or preferences..."
-                />
-              )}
-            />
           </YStack>
         </YStack>
       </YStack>

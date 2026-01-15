@@ -5,7 +5,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
-import { Button, Input, Spinner, Text, XStack, YStack } from '@/components/ui';
+import { Button, Spinner, Text, XStack, YStack } from '@/components/ui';
 import { usePartialProfileUpdate } from '@/lib/hooks/use-partial-profile-update';
 import { useProfile } from '@/lib/hooks/use-profile';
 
@@ -38,7 +38,6 @@ const formSchema = z.object({
   stressLevel: z.enum(stressLevelEnum),
   exerciseFrequency: z.enum(exerciseFrequencyEnum),
   exerciseTypes: z.array(z.string()),
-  lifestyleNotes: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -80,7 +79,6 @@ export default function LifestyleScreen() {
       exerciseFrequency:
         (profile?.exerciseFrequency as ExerciseFrequency) || '2-3x/week',
       exerciseTypes: profile?.exerciseTypes || [],
-      lifestyleNotes: '',
     },
   });
 
@@ -253,28 +251,6 @@ export default function LifestyleScreen() {
                 {errors.exerciseTypes.message}
               </Text>
             )}
-          </YStack>
-
-          {/* Optional Notes */}
-          <YStack gap="$2">
-            <Text fontSize="$4" fontWeight="600">
-              Notes (Optional)
-            </Text>
-            <Controller
-              control={control}
-              name="lifestyleNotes"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  multiline
-                  numberOfLines={4}
-                  textAlignVertical="top"
-                  placeholder="Any other lifestyle factors, activities, or preferences..."
-                />
-              )}
-            />
           </YStack>
         </YStack>
       </YStack>
