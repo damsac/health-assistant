@@ -1,0 +1,34 @@
+---
+description: How to create and manage shared rules across IDEs
+globs: .shared-rules/**, .cursor/rules/**, .windsurf/rules/**
+---
+
+# Shared Rules Guide
+
+## Structure
+
+| Directory | Purpose |
+|-----------|---------|
+| `.shared-rules/` | Source of truth for shared rules |
+| `.cursor/rules/` | Cursor rules (symlinks + IDE-specific) |
+| `.windsurf/rules/` | Windsurf rules (symlinks + IDE-specific) |
+
+## Creating a Shared Rule
+
+1. Create the rule in `.shared-rules/rule-name.mdc`
+2. Symlink to each IDE:
+   ```bash
+   ln -s ../../.shared-rules/rule-name.mdc .cursor/rules/rule-name.mdc
+   ln -s ../../.shared-rules/rule-name.mdc .windsurf/rules/rule-name.mdc
+   ```
+
+## IDE-Specific Rules
+
+Place directly in the IDE's rules folder without symlinking:
+- Cursor only: `.cursor/rules/my-rule.mdc`
+- Windsurf only: `.windsurf/rules/my-rule.mdc`
+
+## Modifying Rules
+
+- **Shared**: Edit the source file in `.shared-rules/`
+- **IDE-specific**: Edit directly in the IDE's rules folder

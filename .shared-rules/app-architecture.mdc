@@ -1,0 +1,42 @@
+---
+description: App architecture and style guide
+alwaysApply: true
+---
+
+# App Architecture
+
+## Stack
+
+- **Frontend**: Expo (React Native) + expo-router (file-based routing) + Tamagui (UI)
+- **Backend**: Hono server running separately via `bun run agent:dev` (port 4000)
+- **Database**: PostgreSQL via Supabase + Drizzle ORM
+- **Auth**: better-auth
+- **AI**: Vercel AI SDK with Anthropic
+- **Validation**: Zod
+- **State**: TanStack Query for server state
+
+## Directory Structure
+
+| Location | Purpose |
+|----------|---------|
+| `app/` | Expo Router pages. `(auth)/` for login, `(app)/` for protected screens, `api/` for Expo API routes |
+| `server/` | Hono backend. `agents/` for AI config, `actions/` for agentic tools, `routes/` for endpoints, `services/` for business logic |
+| `lib/` | Shared code. `db/` for schema, `hooks/` for React Query hooks, `api/` for type definitions |
+| `components/` | Reusable React components |
+| `supabase/migrations/` | Drizzle-generated SQL migrations |
+
+## Style Conventions
+
+- Use `type` over `interface` unless extending is needed
+- Use `@/` path alias for imports (e.g., `@/lib/db`)
+- API types: define `request`/`response` shapes in `lib/api/`
+- Hooks: wrap fetch logic in TanStack Query hooks in `lib/hooks/`
+- Validation: use Zod schemas co-located with API types via `drizzle-zod`
+- Forms: react-hook-form with `@hookform/resolvers/zod`
+
+## Adding Features
+
+1. **New screen**: Add file in `app/(app)/` using expo-router conventions
+2. **New API endpoint**: Add Expo API route in `app/api/` for client-facing, or Hono route in `server/routes/` for agent backend
+3. **Database changes**: Edit `lib/db/schema.ts`, then `bun run db:generate` and `bun run db:migrate`
+4. **New hook**: Create in `lib/hooks/` using TanStack Query patterns from existing hooks
