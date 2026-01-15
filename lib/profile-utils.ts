@@ -1,5 +1,3 @@
-import { eq } from 'drizzle-orm';
-import { db, userProfile } from '@/lib/db';
 import type { Section } from '@/lib/profile-sections-config';
 import { SECTIONS_CONFIG } from '@/lib/profile-sections-config';
 
@@ -92,15 +90,13 @@ export function getIncompleteSections(
 }
 
 /**
- * Check if a user has completed basic onboarding
- * @param userId - The user ID
- * @returns Promise<boolean> - True if onboarding is complete
+ * Check if a user has completed basic onboarding based on profile data
+ * @param profile - The user profile object
+ * @returns boolean - True if onboarding is complete
  */
-export async function isOnboardingComplete(userId: string): Promise<boolean> {
-  const profile = await db.query.userProfile.findFirst({
-    where: eq(userProfile.userId, userId),
-  });
-
+export function isOnboardingComplete(
+  profile: Record<string, unknown> | null,
+): boolean {
   if (!profile) {
     return false;
   }
