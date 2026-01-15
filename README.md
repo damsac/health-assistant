@@ -42,7 +42,7 @@ bun install
 ### 4. Configure Environment
 
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
 
 ### 5. Start Supabase
