@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Button, Card, Text, XStack, YStack } from '@/components/ui';
 import { useProfile } from '@/lib/hooks/use-profile';
-import { useProfileSections } from '@/lib/hooks/use-profile-sections';
+import { getIncompleteSections } from '@/lib/profile-utils';
 
 interface ProfileCompletionCardProps {
   className?: string;
@@ -12,13 +12,13 @@ export function ProfileCompletionCard({
   className,
 }: ProfileCompletionCardProps) {
   const [showAll, setShowAll] = useState(false);
-  const { data: profile } = useProfile();
-  const { incompleteSections, isLoading } = useProfileSections();
+  const { data: profile, isLoading } = useProfile();
 
   if (isLoading || !profile) {
     return null;
   }
 
+  const incompleteSections = getIncompleteSections(profile);
   const completionPercentage = profile.profileCompletionPercentage || 0;
   const sectionsToShow = showAll
     ? incompleteSections

@@ -8,7 +8,6 @@ import { z } from 'zod';
 import { Button, Input, Spinner, Text, XStack, YStack } from '@/components/ui';
 import { usePartialProfileUpdate } from '@/lib/hooks/use-partial-profile-update';
 import { useProfile } from '@/lib/hooks/use-profile';
-import { useUpdateProfileSection } from '@/lib/hooks/use-update-profile-section';
 
 /**
  * Sleep Patterns Screen
@@ -41,7 +40,6 @@ export default function SleepPatternsScreen() {
   const insets = useSafeAreaInsets();
   const { data: profile } = useProfile();
   const updateProfile = usePartialProfileUpdate();
-  const updateSection = useUpdateProfileSection();
   const [isSaving, setIsSaving] = useState(false);
 
   const {
@@ -73,11 +71,6 @@ export default function SleepPatternsScreen() {
         sleepQuality: data.sleepQuality,
         typicalWakeTime: data.typicalWakeTime,
         typicalBedTime: data.typicalBedTime,
-      });
-
-      await updateSection.mutateAsync({
-        sectionKey: 'sleep',
-        completed: true,
       });
 
       alert('Sleep patterns saved successfully!');

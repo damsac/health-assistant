@@ -13,7 +13,13 @@ export const GET = withAuth(async (_request, session) => {
     return errorResponse('Profile not found', 404);
   }
 
-  return json<ProfileResponse>(profile);
+  // Compute completion percentage from actual fields
+  const profileCompletionPercentage = calculateProfileCompletion(profile);
+
+  return json<ProfileResponse>({
+    ...profile,
+    profileCompletionPercentage,
+  });
 });
 
 export const PUT = withAuth(async (request, session) => {
@@ -23,20 +29,9 @@ export const PUT = withAuth(async (request, session) => {
     return parsed.error;
   }
 
-  // Check if this is the first time completing the profile
-  const _existingProfile = await db.query.userProfile.findFirst({
-    where: eq(userProfile.userId, session.user.id),
-  });
-
-  // Calculate completion percentage based on sections
-  const completionPercentage = await calculateProfileCompletion(
-    session.user.id,
-  );
-
   const updateData = {
     ...parsed.data,
     updatedAt: new Date(),
-    profileCompletionPercentage: completionPercentage,
   };
 
   const [profile] = await db
@@ -44,7 +39,6 @@ export const PUT = withAuth(async (request, session) => {
     .values({
       userId: session.user.id,
       ...parsed.data,
-      profileCompletionPercentage: completionPercentage,
     })
     .onConflictDoUpdate({
       target: userProfile.userId,
@@ -52,5 +46,11 @@ export const PUT = withAuth(async (request, session) => {
     })
     .returning();
 
-  return json<ProfileResponse>(profile);
+  // Compute completion percentage from actual fields
+  const profileCompletionPercentage = calculateProfileCompletion(profile);
+
+  return json<ProfileResponse>({
+    ...profile,
+    profileCompletionPercentage,
+  });
 });

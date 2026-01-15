@@ -5,13 +5,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Spinner, Text, XStack, YStack } from '@/components/ui';
 import { usePartialProfileUpdate } from '@/lib/hooks/use-partial-profile-update';
 import { useProfile } from '@/lib/hooks/use-profile';
-import { useUpdateProfileSection } from '@/lib/hooks/use-update-profile-section';
 
 export default function GarminConnectionScreen() {
   const insets = useSafeAreaInsets();
   const { data: profile } = useProfile();
   const updateProfile = usePartialProfileUpdate();
-  const updateSection = useUpdateProfileSection();
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
 
@@ -25,12 +23,6 @@ export default function GarminConnectionScreen() {
       await updateProfile.mutateAsync({
         garminConnected: true,
         garminUserId: 'temp-user-id', // Will be replaced with actual Garmin user ID
-      });
-
-      // Mark section as complete
-      await updateSection.mutateAsync({
-        sectionKey: 'garmin',
-        completed: true,
       });
 
       // Show success message
@@ -50,12 +42,6 @@ export default function GarminConnectionScreen() {
       await updateProfile.mutateAsync({
         garminConnected: false,
         garminUserId: null,
-      });
-
-      // Mark section as incomplete
-      await updateSection.mutateAsync({
-        sectionKey: 'garmin',
-        completed: false,
       });
 
       alert('Garmin disconnected successfully.');

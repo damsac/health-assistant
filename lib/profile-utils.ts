@@ -1,87 +1,94 @@
 import { eq } from 'drizzle-orm';
-import { db, profileSection, userProfile } from '@/lib/db';
+import { db, userProfile } from '@/lib/db';
 import type { Section } from '@/lib/profile-sections-config';
 import { SECTIONS_CONFIG } from '@/lib/profile-sections-config';
 
 /**
- * Calculate profile completion percentage for a user
- * @param userId - The user ID to calculate completion for
- * @returns Promise<number> - The completion percentage (0-100)
+ * Check if a specific profile section is complete based on field presence
+ * @param profile - The user profile object
+ * @param sectionKey - The section key to check
+ * @returns boolean - True if all required fields for the section are filled
  */
-export async function calculateProfileCompletion(
-  userId: string,
-): Promise<number> {
-  const sections = await db.query.profileSection.findMany({
-    where: eq(profileSection.userId, userId),
-  });
-
-  const sectionKeys = ['sleep', 'garmin', 'eating', 'supplements', 'lifestyle'];
-  const completedCount = sections.filter(
-    (s) => s.completed && sectionKeys.includes(s.sectionKey),
-  ).length;
-
-  // Base completion is 40% from onboarding
-  // Each completed section adds 12%
-  return Math.min(40 + completedCount * 12, 100);
-}
-
-/**
- * Mark a profile section as complete and update the overall completion percentage
- * @param userId - The user ID
- * @param sectionKey - The section key to mark complete
- */
-export async function markSectionComplete(
-  userId: string,
+export function isSectionComplete(
+  profile: Record<string, unknown>,
   sectionKey: string,
-): Promise<void> {
-  await db.transaction(async (tx) => {
-    // Insert or update the section as completed
-    await tx
-      .insert(profileSection)
-      .values({
-        userId,
-        sectionKey,
-        completed: true,
-        completedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: [profileSection.userId, profileSection.sectionKey],
-        set: {
-          completed: true,
-          completedAt: new Date(),
-        },
-      });
+): boolean {
+  if (!profile) return false;
 
-    // Calculate and update the profile completion percentage
-    const completionPercentage = await calculateProfileCompletion(userId);
-
-    await tx
-      .update(userProfile)
-      .set({
-        profileCompletionPercentage: completionPercentage,
-        updatedAt: new Date(),
-      })
-      .where(eq(userProfile.userId, userId));
-  });
+  switch (sectionKey) {
+    case 'sleep':
+      return !!(
+        profile.sleepHoursAverage &&
+        profile.sleepQuality &&
+        profile.typicalWakeTime &&
+        profile.typicalBedTime
+      );
+    case 'eating':
+      return !!(
+        profile.mealsPerDay &&
+        profile.typicalMealTimes &&
+        Array.isArray(profile.typicalMealTimes) &&
+        profile.typicalMealTimes.length > 0
+      );
+    case 'supplements':
+      return !!profile.supplementsMedications;
+    case 'lifestyle':
+      return !!(
+        profile.stressLevel &&
+        profile.exerciseFrequency &&
+        profile.exerciseTypes &&
+        Array.isArray(profile.exerciseTypes) &&
+        profile.exerciseTypes.length > 0
+      );
+    case 'garmin':
+      return !!profile.garminConnected;
+    default:
+      return false;
+  }
 }
 
 /**
- * Get all incomplete profile sections for a user
- * @param userId - The user ID
- * @returns Promise<Section[]> - Array of incomplete sections
+ * Calculate profile completion percentage based on filled fields
+ * @param profile - The user profile object
+ * @returns number - The completion percentage (0-100)
  */
-export async function getIncompleteSections(
-  userId: string,
-): Promise<Section[]> {
-  const sections = await db.query.profileSection.findMany({
-    where: eq(profileSection.userId, userId),
-  });
+export function calculateProfileCompletion(
+  profile: Record<string, unknown>,
+): number {
+  if (!profile) return 0;
 
-  const completedKeys = new Set(
-    sections.filter((s) => s.completed).map((s) => s.sectionKey),
+  // Check onboarding completion (40%)
+  const hasBasicInfo = !!(
+    profile.heightCm ||
+    profile.weightGrams ||
+    profile.gender ||
+    profile.dateOfBirth
   );
 
-  return SECTIONS_CONFIG.filter((section) => !completedKeys.has(section.key));
+  const baseCompletion = hasBasicInfo ? 40 : 0;
+
+  // Check each section (12% each, 5 sections = 60%)
+  const sectionKeys = ['sleep', 'garmin', 'eating', 'supplements', 'lifestyle'];
+  const completedCount = sectionKeys.filter((key) =>
+    isSectionComplete(profile, key),
+  ).length;
+
+  return Math.min(baseCompletion + completedCount * 12, 100);
+}
+
+/**
+ * Get all incomplete profile sections based on field presence
+ * @param profile - The user profile object
+ * @returns Section[] - Array of incomplete sections
+ */
+export function getIncompleteSections(
+  profile: Record<string, unknown>,
+): Section[] {
+  if (!profile) return SECTIONS_CONFIG;
+
+  return SECTIONS_CONFIG.filter(
+    (section) => !isSectionComplete(profile, section.key),
+  );
 }
 
 /**
@@ -121,20 +128,3 @@ export function getAllSections(): Section[] {
 
 // Re-export for convenience
 export type { Section };
-
-/**
- * Check if a specific section is complete for a user
- * @param userId - The user ID
- * @param sectionKey - The section key to check
- * @returns Promise<boolean> - True if section is complete
- */
-export async function isSectionComplete(
-  userId: string,
-  sectionKey: string,
-): Promise<boolean> {
-  const section = await db.query.profileSection.findFirst({
-    where: eq(profileSection.userId, userId),
-  });
-
-  return section?.completed === true && section.sectionKey === sectionKey;
-}

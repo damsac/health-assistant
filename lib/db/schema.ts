@@ -7,7 +7,6 @@ import {
   text,
   time,
   timestamp,
-  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 
@@ -218,23 +217,5 @@ export const healthMetric = pgTable(
       table.metricType,
       table.recordedAt,
     ),
-  ],
-);
-
-// Profile sections - tracks completion status of different profile sections
-export const profileSection = pgTable(
-  'profile_sections',
-  {
-    id: uuid('id').primaryKey().defaultRandom(),
-    userId: text('user_id')
-      .notNull()
-      .references(() => user.id, { onDelete: 'cascade' }),
-    sectionKey: text('section_key').notNull(),
-    completed: boolean('completed').default(false),
-    completedAt: timestamp('completed_at'),
-  },
-  (table) => [
-    index('idx_profile_section_user_id').on(table.userId),
-    uniqueIndex('unique_user_section').on(table.userId, table.sectionKey),
   ],
 );

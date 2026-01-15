@@ -9,6 +9,7 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { errorResponse, json, parseBody, withAuth } from '@/lib/api-middleware';
 import { db, userProfile } from '@/lib/db';
+import { calculateProfileCompletion } from '@/lib/profile-utils';
 
 const partialUpdateSchema = z.object({
   sleepHoursAverage: z.number().min(4).max(12).optional(),
@@ -64,7 +65,13 @@ export const PATCH = withAuth(async (request, session) => {
       );
     }
 
-    return json(profile);
+    // Compute completion percentage from actual fields
+    const profileCompletionPercentage = calculateProfileCompletion(profile);
+
+    return json({
+      ...profile,
+      profileCompletionPercentage,
+    });
   } catch (error) {
     console.error('Error updating profile:', error);
     return errorResponse('Failed to update profile', 500);

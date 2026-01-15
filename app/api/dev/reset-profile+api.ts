@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { errorResponse, json, withAuth } from '@/lib/api-middleware';
-import { db, profileSection, userProfile } from '@/lib/db';
+import { db, userProfile } from '@/lib/db';
 
 export const POST = withAuth(async (_request, session) => {
   // Only allow in development
@@ -9,11 +9,6 @@ export const POST = withAuth(async (_request, session) => {
   }
 
   try {
-    // Delete user's profile sections
-    await db
-      .delete(profileSection)
-      .where(eq(profileSection.userId, session.user.id));
-
     // Delete user's profile
     await db.delete(userProfile).where(eq(userProfile.userId, session.user.id));
 

@@ -8,7 +8,6 @@ import { z } from 'zod';
 import { Button, Input, Spinner, Text, XStack, YStack } from '@/components/ui';
 import { usePartialProfileUpdate } from '@/lib/hooks/use-partial-profile-update';
 import { useProfile } from '@/lib/hooks/use-profile';
-import { useUpdateProfileSection } from '@/lib/hooks/use-update-profile-section';
 
 const formSchema = z.object({
   supplementsMedications: z.string().optional(),
@@ -20,7 +19,6 @@ export default function SupplementsScreen() {
   const insets = useSafeAreaInsets();
   const { data: profile } = useProfile();
   const updateProfile = usePartialProfileUpdate();
-  const updateSection = useUpdateProfileSection();
   const [isSaving, setIsSaving] = useState(false);
 
   const {
@@ -40,12 +38,6 @@ export default function SupplementsScreen() {
       // Update profile
       await updateProfile.mutateAsync({
         supplementsMedications: data.supplementsMedications || null,
-      });
-
-      // Mark section as complete
-      await updateSection.mutateAsync({
-        sectionKey: 'supplements',
-        completed: true,
       });
 
       // Show success message
