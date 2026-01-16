@@ -1,0 +1,25 @@
+---
+trigger: always_on
+---
+description: Database migration workflow using Drizzle ORM
+globs: lib/db/schema.ts, supabase/migrations/**
+---
+
+# Database Migrations
+
+## Workflow
+
+1. Edit schema at `lib/db/schema.ts`
+2. Generate migration: `bun run db:generate`
+3. Review generated SQL in `supabase/migrations/`
+4. Apply migration: `bun run db:migrate`
+
+## Commands
+
+| Command | Purpose |
+|---------|---------|
+| `bun run db:generate` | Generate SQL migration from schema diff |
+| `bun run db:migrate` | Apply pending migrations |
+| `bun run db:push` | Direct schema push (dev only, skips migrations) |
+
+

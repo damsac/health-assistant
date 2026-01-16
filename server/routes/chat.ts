@@ -137,6 +137,21 @@ chat.post('/', async (c) => {
     dateOfBirth: profile?.dateOfBirth,
     measurementSystem: profile?.measurementSystem,
     healthData,
+    // New profile fields
+    sleepHoursAverage: profile?.sleepHoursAverage,
+    sleepQuality: profile?.sleepQuality,
+    typicalWakeTime: profile?.typicalWakeTime,
+    typicalBedTime: profile?.typicalBedTime,
+    mealsPerDay: profile?.mealsPerDay,
+    typicalMealTimes: profile?.typicalMealTimes,
+    snackingHabits: profile?.snackingHabits,
+    supplementsMedications: profile?.supplementsMedications,
+    healthConditions: profile?.healthConditions,
+    stressLevel: profile?.stressLevel,
+    exerciseFrequency: profile?.exerciseFrequency,
+    exerciseTypes: profile?.exerciseTypes,
+    waterIntakeLiters: profile?.waterIntakeLiters,
+    garminConnected: profile?.garminConnected,
   };
 
   // Convert UIMessage format to model message format

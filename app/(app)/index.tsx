@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ProfileCompletionCard } from '@/components/ProfileCompletionCard';
 import { Button, H1, H2, Text, YStack } from '@/components/ui';
 import { useSession, useSignOut } from '@/lib/hooks/use-auth';
 import { useProfile } from '@/lib/hooks/use-profile';
@@ -66,6 +67,9 @@ export default function HomeScreen() {
       >
         <H1>Home</H1>
 
+        {/* Profile Completion Card */}
+        <ProfileCompletionCard />
+
         <YStack gap="$2">
           <H2>User</H2>
           <Text>Name: {user?.name || '-'}</Text>
@@ -112,6 +116,27 @@ export default function HomeScreen() {
           <Button onPress={() => router.push('/(app)/edit-profile')}>
             Edit Profile
           </Button>
+
+          {/* Dev-only reset button */}
+          {process.env.NODE_ENV === 'development' && (
+            <Button
+              theme="red"
+              onPress={async () => {
+                try {
+                  await fetch('/api/dev/reset-profile', {
+                    method: 'POST',
+                    credentials: 'include',
+                  });
+                  alert('Profile reset! Refreshing...');
+                  window.location.reload();
+                } catch (_error) {
+                  alert('Failed to reset profile');
+                }
+              }}
+            >
+              🔄 Reset Profile (Dev)
+            </Button>
+          )}
         </YStack>
 
         <YStack paddingVertical="$4">

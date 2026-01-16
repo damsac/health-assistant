@@ -17,6 +17,7 @@ import {
   useConversations,
   useDeleteConversation,
 } from '@/lib/hooks/use-conversations';
+import { useProfile } from '@/lib/hooks/use-profile';
 
 const SIDEBAR_WIDTH = 280;
 
@@ -63,6 +64,45 @@ function MessageBubble({
         <Text color={isUser ? 'white' : '$color12'} fontSize="$3">
           {content}
         </Text>
+      </YStack>
+    </XStack>
+  );
+}
+
+function ProfileCompletionPrompt({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <XStack
+      justifyContent="flex-start"
+      paddingHorizontal="$3"
+      marginVertical="$1"
+    >
+      <YStack
+        backgroundColor="$yellow2"
+        paddingHorizontal="$3"
+        paddingVertical="$2"
+        borderRadius="$4"
+        maxWidth="80%"
+        borderLeftWidth={3}
+        borderLeftColor="$yellow9"
+      >
+        <XStack gap="$2" alignItems="flex-start">
+          <Text fontSize="$3">💡</Text>
+          <YStack flex={1} gap="$1">
+            <Text color="$yellow12" fontSize="$3" fontWeight="500">
+              Tip: Complete your profile
+            </Text>
+            <Text color="$yellow11" fontSize="$2">
+              I can give you even better advice if you complete more of your
+              profile. Want to add your sleep patterns, eating schedule, or
+              other details? You can update these anytime from the home screen.
+            </Text>
+            <Pressable onPress={onDismiss} style={{ marginTop: 8 }}>
+              <Text color="$yellow10" fontSize="$2" fontWeight="500">
+                Dismiss
+              </Text>
+            </Pressable>
+          </YStack>
+        </XStack>
       </YStack>
     </XStack>
   );
@@ -305,6 +345,11 @@ export default function ChatScreen() {
   const [activeConversationId, setActiveConversationId] = useState<
     string | undefined
   >(params.conversationId);
+  const [showProfilePrompt, setShowProfilePrompt] = useState(false);
+  const [dismissedProfilePrompt, setDismissedProfilePrompt] = useState(false);
+
+  // Get profile completion percentage
+  const { data: profile } = useProfile();
 
   const {
     messages,
@@ -341,6 +386,28 @@ export default function ChatScreen() {
       }, 100);
     }
   }, [messages]);
+
+  // Check if we should show profile completion prompt
+  useEffect(() => {
+    // Count user messages
+    const userMessageCount = messages.filter((m) => m.role === 'user').length;
+
+    // Show prompt after 3rd user message if profile is incomplete and not dismissed
+    if (
+      userMessageCount === 3 &&
+      profile?.profileCompletionPercentage !== undefined &&
+      profile?.profileCompletionPercentage !== null &&
+      profile.profileCompletionPercentage < 100 &&
+      !dismissedProfilePrompt
+    ) {
+      setShowProfilePrompt(true);
+    }
+  }, [messages, profile?.profileCompletionPercentage, dismissedProfilePrompt]);
+
+  const handleDismissProfilePrompt = () => {
+    setShowProfilePrompt(false);
+    setDismissedProfilePrompt(true);
+  };
 
   const onSubmit = async () => {
     if (!inputValue.trim() || isLoading) return;
@@ -464,6 +531,10 @@ export default function ChatScreen() {
                 <Spinner size="small" color="$color10" />
               </YStack>
             </XStack>
+          )}
+
+          {showProfilePrompt && (
+            <ProfileCompletionPrompt onDismiss={handleDismissProfilePrompt} />
           )}
 
           {error && (

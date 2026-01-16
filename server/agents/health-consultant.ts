@@ -34,6 +34,21 @@ export type UserProfileContext = {
   dateOfBirth?: Date | null;
   measurementSystem?: string | null;
   healthData?: HealthMetrics;
+  // New profile fields
+  sleepHoursAverage?: string | null;
+  sleepQuality?: string | null;
+  typicalWakeTime?: string | null;
+  typicalBedTime?: string | null;
+  mealsPerDay?: number | null;
+  typicalMealTimes?: string[] | null;
+  snackingHabits?: string | null;
+  supplementsMedications?: string | null;
+  healthConditions?: string[] | null;
+  stressLevel?: string | null;
+  exerciseFrequency?: string | null;
+  exerciseTypes?: string[] | null;
+  waterIntakeLiters?: string | null;
+  garminConnected?: boolean | null;
 };
 
 const calculateAge = (dateOfBirth: Date): number => {
@@ -52,12 +67,15 @@ const calculateAge = (dateOfBirth: Date): number => {
 const formatProfileContext = (context: UserProfileContext): string => {
   const parts: string[] = [];
 
+  // Basic Info section
+  const basicInfo: string[] = [];
+
   if (context.userName) {
-    parts.push(`Name: ${context.userName}`);
+    basicInfo.push(`Name: ${context.userName}`);
   }
 
   if (context.dateOfBirth) {
-    parts.push(`Age: ${calculateAge(context.dateOfBirth)} years old`);
+    basicInfo.push(`Age: ${calculateAge(context.dateOfBirth)} years old`);
   }
 
   if (context.gender) {
@@ -65,7 +83,7 @@ const formatProfileContext = (context: UserProfileContext): string => {
       context.gender === 'prefer_not_to_say'
         ? 'Prefer not to say'
         : context.gender.charAt(0).toUpperCase() + context.gender.slice(1);
-    parts.push(`Gender: ${genderDisplay}`);
+    basicInfo.push(`Sex: ${genderDisplay}`);
   }
 
   if (context.heightCm) {
@@ -73,29 +91,100 @@ const formatProfileContext = (context: UserProfileContext): string => {
       const totalInches = context.heightCm / 2.54;
       const feet = Math.floor(totalInches / 12);
       const inches = Math.round(totalInches % 12);
-      parts.push(`Height: ${feet}'${inches}"`);
+      basicInfo.push(`Height: ${feet}'${inches}"`);
     } else {
-      parts.push(`Height: ${context.heightCm} cm`);
+      basicInfo.push(`Height: ${context.heightCm} cm`);
     }
   }
 
   if (context.weightGrams) {
     if (context.measurementSystem === 'imperial') {
       const lbs = Math.round(context.weightGrams / 453.592);
-      parts.push(`Weight: ${lbs} lbs`);
+      basicInfo.push(`Weight: ${lbs} lbs`);
     } else {
       const kg = (context.weightGrams / 1000).toFixed(1);
-      parts.push(`Weight: ${kg} kg`);
+      basicInfo.push(`Weight: ${kg} kg`);
     }
   }
 
   if (context.dietaryPreferences && context.dietaryPreferences.length > 0) {
-    parts.push(`Dietary Preferences: ${context.dietaryPreferences.join(', ')}`);
+    basicInfo.push(
+      `Dietary Restrictions: ${context.dietaryPreferences.join(', ')}`,
+    );
   }
 
-  return parts.length > 0
-    ? `\n\nUser Profile:\n${parts.map((p) => `- ${p}`).join('\n')}`
-    : '';
+  if (context.healthConditions && context.healthConditions.length > 0) {
+    basicInfo.push(`Health Conditions: ${context.healthConditions.join(', ')}`);
+  }
+
+  if (basicInfo.length > 0) {
+    parts.push(`Basic Info:\n${basicInfo.map((p) => `- ${p}`).join('\n')}`);
+  }
+
+  // Sleep Patterns section
+  const sleepInfo: string[] = [];
+  if (context.sleepHoursAverage) {
+    sleepInfo.push(`Average: ${context.sleepHoursAverage} hours`);
+  }
+  if (context.sleepQuality) {
+    sleepInfo.push(`Quality: ${context.sleepQuality}`);
+  }
+  if (context.typicalWakeTime && context.typicalBedTime) {
+    sleepInfo.push(
+      `Schedule: ${context.typicalWakeTime} to ${context.typicalBedTime}`,
+    );
+  }
+  if (sleepInfo.length > 0) {
+    parts.push(`Sleep Patterns:\n${sleepInfo.map((p) => `- ${p}`).join('\n')}`);
+  }
+
+  // Eating Habits section
+  const eatingInfo: string[] = [];
+  if (context.mealsPerDay) {
+    eatingInfo.push(`Meals per day: ${context.mealsPerDay}`);
+  }
+  if (context.typicalMealTimes && context.typicalMealTimes.length > 0) {
+    eatingInfo.push(`Meal times: ${context.typicalMealTimes.join(', ')}`);
+  }
+  if (context.snackingHabits) {
+    eatingInfo.push(`Snacking: ${context.snackingHabits}`);
+  }
+  if (context.waterIntakeLiters) {
+    eatingInfo.push(`Water intake: ${context.waterIntakeLiters}L daily`);
+  }
+  if (eatingInfo.length > 0) {
+    parts.push(`Eating Habits:\n${eatingInfo.map((p) => `- ${p}`).join('\n')}`);
+  }
+
+  // Health Context section
+  const healthInfo: string[] = [];
+  if (context.supplementsMedications) {
+    healthInfo.push(
+      `Supplements/Medications: ${context.supplementsMedications}`,
+    );
+  }
+  if (context.stressLevel) {
+    healthInfo.push(`Stress Level: ${context.stressLevel}`);
+  }
+  if (context.exerciseFrequency) {
+    const exerciseTypes =
+      context.exerciseTypes && context.exerciseTypes.length > 0
+        ? `, ${context.exerciseTypes.join(', ')}`
+        : '';
+    healthInfo.push(`Exercise: ${context.exerciseFrequency}${exerciseTypes}`);
+  }
+  if (healthInfo.length > 0) {
+    parts.push(
+      `Health Context:\n${healthInfo.map((p) => `- ${p}`).join('\n')}`,
+    );
+  }
+
+  // Garmin connection status
+  if (context.garminConnected) {
+    parts.push(`- Garmin data available (fetch recent metrics when relevant)`);
+  }
+
+  return parts.length > 0 ? `\n\nUSER PROFILE:\n${parts.join('\n\n')}` : '';
 };
 
 const formatHealthData = (healthData?: HealthMetrics): string => {
@@ -190,7 +279,7 @@ export const healthConsultantAgent = {
     const profileSection = formatProfileContext(context);
     const healthDataSection = formatHealthData(context.healthData);
 
-    return `You are a holistic nutrition consultant who understands that true wellness emerges from the interconnection of diet, lifestyle, mental well-being, and environment.${profileSection}${healthDataSection}
+    return `You are a holistic nutrition consultant providing personalized, evidence-based guidance.${profileSection}${healthDataSection}
 
 Your approach:
 - View health through a holistic lens — what we eat, how we move, how we think, how we sleep, and how we manage stress are all deeply connected

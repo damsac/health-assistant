@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { type ProfileResponse, upsertProfileSchema } from '@/lib/api/profile';
 import { errorResponse, json, parseBody, withAuth } from '@/lib/api-middleware';
 import { db, userProfile } from '@/lib/db';
+import { calculateProfileCompletion } from '@/lib/profile-utils';
 
 export const GET = withAuth(async (_request, session) => {
   const profile = await db.query.userProfile.findFirst({
@@ -12,7 +13,13 @@ export const GET = withAuth(async (_request, session) => {
     return errorResponse('Profile not found', 404);
   }
 
-  return json<ProfileResponse>(profile);
+  // Compute completion percentage from actual fields
+  const profileCompletionPercentage = calculateProfileCompletion(profile);
+
+  return json<ProfileResponse>({
+    ...profile,
+    profileCompletionPercentage,
+  });
 });
 
 export const PUT = withAuth(async (request, session) => {
@@ -22,6 +29,11 @@ export const PUT = withAuth(async (request, session) => {
     return parsed.error;
   }
 
+  const updateData = {
+    ...parsed.data,
+    updatedAt: new Date(),
+  };
+
   const [profile] = await db
     .insert(userProfile)
     .values({
@@ -30,12 +42,15 @@ export const PUT = withAuth(async (request, session) => {
     })
     .onConflictDoUpdate({
       target: userProfile.userId,
-      set: {
-        ...parsed.data,
-        updatedAt: new Date(),
-      },
+      set: updateData,
     })
     .returning();
 
-  return json<ProfileResponse>(profile);
+  // Compute completion percentage from actual fields
+  const profileCompletionPercentage = calculateProfileCompletion(profile);
+
+  return json<ProfileResponse>({
+    ...profile,
+    profileCompletionPercentage,
+  });
 });

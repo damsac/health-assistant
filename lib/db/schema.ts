@@ -1,9 +1,11 @@
 import {
   boolean,
+  decimal,
   index,
   integer,
   pgTable,
   text,
+  time,
   timestamp,
   uuid,
 } from 'drizzle-orm/pg-core';
@@ -84,6 +86,12 @@ export const genderEnum = [
 ] as const;
 export type Gender = (typeof genderEnum)[number];
 
+export const sleepQualityEnum = ['poor', 'fair', 'good', 'excellent'] as const;
+export type SleepQuality = (typeof sleepQualityEnum)[number];
+
+export const stressLevelEnum = ['low', 'moderate', 'high'] as const;
+export type StressLevel = (typeof stressLevelEnum)[number];
+
 export const userProfile = pgTable(
   'user_profile',
   {
@@ -98,6 +106,35 @@ export const userProfile = pgTable(
     dietaryPreferences: text('dietary_preferences').array(),
     dateOfBirth: timestamp('date_of_birth'),
     measurementSystem: text('measurement_system').default('metric'),
+    primaryGoals: text('primary_goals').array(),
+    allergies: text('allergies'),
+
+    // New fields for progressive profile completion
+    sleepHoursAverage: decimal('sleep_hours_average', {
+      precision: 3,
+      scale: 1,
+    }),
+    sleepQuality: text('sleep_quality').$type<SleepQuality>(),
+    typicalWakeTime: time('typical_wake_time'),
+    typicalBedTime: time('typical_bed_time'),
+    mealsPerDay: integer('meals_per_day'),
+    typicalMealTimes: text('typical_meal_times').array(),
+    snackingHabits: text('snacking_habits'),
+    supplementsMedications: text('supplements_medications'),
+    healthConditions: text('health_conditions').array(),
+    stressLevel: text('stress_level').$type<StressLevel>(),
+    exerciseFrequency: text('exercise_frequency'),
+    exerciseTypes: text('exercise_types').array(),
+    waterIntakeLiters: decimal('water_intake_liters', {
+      precision: 4,
+      scale: 2,
+    }),
+    garminConnected: boolean('garmin_connected').default(false),
+    garminUserId: text('garmin_user_id'),
+    profileCompletionPercentage: integer(
+      'profile_completion_percentage',
+    ).default(40),
+
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },

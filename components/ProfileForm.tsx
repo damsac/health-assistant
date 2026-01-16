@@ -1,3 +1,10 @@
+/**
+ * ProfileForm Component
+ * Reusable form for editing user profile information including height, weight,
+ * gender, date of birth, and dietary preferences. Supports both metric and imperial
+ * measurement systems with automatic conversion.
+ */
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -8,7 +15,6 @@ import { type Gender, genderEnum } from '@/lib/db/schema';
 import { useUpsertProfile } from '@/lib/hooks/use-profile';
 import {
   cmToFeetInches,
-  convertWeightBetweenSystems,
   feetInchesToCm,
   gramsToKg,
   kgToGrams,
@@ -71,6 +77,8 @@ const createFormSchema = (
           'Use YYYY-MM-DD',
         ),
       dietaryPreferences: z.string(),
+      primaryGoals: z.string(),
+      allergies: z.string(),
     })
     .transform((data): UpsertProfileRequest => {
       let heightCmVal: number | null = null;
@@ -97,6 +105,11 @@ const createFormSchema = (
         .map((s) => s.trim())
         .filter(Boolean);
 
+      const goals = data.primaryGoals
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
       return {
         heightCm: heightCmVal,
         weightGrams,
@@ -106,6 +119,24 @@ const createFormSchema = (
           : null,
         measurementSystem,
         dietaryPreferences: prefs.length ? prefs : null,
+        primaryGoals: goals.length ? goals : null,
+        allergies: data.allergies || null,
+        // Include all other fields with null defaults
+        sleepHoursAverage: null,
+        sleepQuality: null,
+        typicalWakeTime: null,
+        typicalBedTime: null,
+        mealsPerDay: null,
+        typicalMealTimes: null,
+        snackingHabits: null,
+        supplementsMedications: null,
+        healthConditions: null,
+        stressLevel: null,
+        exerciseFrequency: null,
+        exerciseTypes: null,
+        waterIntakeLiters: null,
+        garminConnected: false,
+        garminUserId: null,
       };
     });
 };
@@ -119,6 +150,8 @@ type InitialProfile = {
   dateOfBirth: Date | null;
   measurementSystem: string | null;
   dietaryPreferences: string[] | null;
+  primaryGoals: string[] | null;
+  allergies: string | null;
 };
 
 type ProfileFormProps = {
@@ -127,8 +160,10 @@ type ProfileFormProps = {
   submitLabel?: string;
 };
 
-function formatDateForInput(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+function formatDateForInput(date: Date | string | null): string {
+  if (!date) return '';
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
 }
 
 function getInitialValues(
@@ -144,6 +179,8 @@ function getInitialValues(
       gender: '',
       dateOfBirth: '',
       dietaryPreferences: '',
+      primaryGoals: '',
+      allergies: '',
     };
   }
 
@@ -177,6 +214,8 @@ function getInitialValues(
       ? formatDateForInput(profile.dateOfBirth)
       : '',
     dietaryPreferences: profile.dietaryPreferences?.join(', ') || '',
+    primaryGoals: profile.primaryGoals?.join(', ') || '',
+    allergies: profile.allergies || '',
   };
 }
 
@@ -187,51 +226,18 @@ export function ProfileForm({
 }: ProfileFormProps) {
   const upsertProfile = useUpsertProfile();
   const initialSystem =
-    (initialProfile?.measurementSystem as MeasurementSystem) || 'metric';
-  const [measurementSystem, setMeasurementSystem] =
-    useState<MeasurementSystem>(initialSystem);
-  const isMetric = measurementSystem === 'metric';
+    (initialProfile?.measurementSystem as MeasurementSystem) || 'imperial';
+  const [measurementSystem] = useState<MeasurementSystem>(initialSystem);
+  const isMetric = false; // Always use imperial
 
   const {
     control,
     handleSubmit,
-    setValue,
-    getValues,
     formState: { errors },
   } = useForm<FormInput, unknown, UpsertProfileRequest>({
     resolver: zodResolver(createFormSchema(isMetric, measurementSystem)),
     defaultValues: getInitialValues(initialProfile, initialSystem === 'metric'),
   });
-
-  const handleSystemChange = (newSystem: MeasurementSystem) => {
-    if (newSystem === measurementSystem) return;
-    const values = getValues();
-
-    if (newSystem === 'imperial' && values.heightCm) {
-      const cm = Number.parseFloat(values.heightCm);
-      if (!Number.isNaN(cm)) {
-        const { feet, inches } = cmToFeetInches(cm);
-        setValue('heightFeet', String(feet));
-        setValue('heightInches', String(inches));
-      }
-    } else if (newSystem === 'metric') {
-      const feet = Number.parseFloat(values.heightFeet || '0') || 0;
-      const inches = Number.parseFloat(values.heightInches || '0') || 0;
-      if (feet || inches)
-        setValue('heightCm', String(feetInchesToCm(feet, inches)));
-    }
-
-    if (values.weight) {
-      const w = Number.parseFloat(values.weight);
-      if (!Number.isNaN(w))
-        setValue(
-          'weight',
-          String(convertWeightBetweenSystems(w, measurementSystem, newSystem)),
-        );
-    }
-
-    setMeasurementSystem(newSystem);
-  };
 
   const onSubmit = async (data: UpsertProfileRequest) => {
     try {
@@ -246,23 +252,6 @@ export function ProfileForm({
 
   return (
     <YStack gap="$4">
-      <XStack gap="$2">
-        <Button
-          flex={1}
-          onPress={() => handleSystemChange('metric')}
-          opacity={isMetric ? 1 : 0.5}
-        >
-          Metric (cm, kg)
-        </Button>
-        <Button
-          flex={1}
-          onPress={() => handleSystemChange('imperial')}
-          opacity={!isMetric ? 1 : 0.5}
-        >
-          Imperial (ft/in, lbs)
-        </Button>
-      </XStack>
-
       {serverError && (
         <Text color="$red10" textAlign="center">
           {serverError}
@@ -271,90 +260,62 @@ export function ProfileForm({
 
       <YStack gap="$2">
         <Text>Height</Text>
-        {isMetric ? (
-          <Controller
-            control={control}
-            name="heightCm"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <YStack gap="$1">
-                <XStack gap="$2" alignItems="center">
+        <YStack gap="$1">
+          <XStack gap="$2" alignItems="center">
+            <Controller
+              control={control}
+              name="heightFeet"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <XStack flex={1} gap="$1" alignItems="center">
                   <Input
                     flex={1}
-                    placeholder="e.g. 175"
+                    placeholder="5"
                     value={value}
                     onChangeText={onChange}
                     onBlur={onBlur}
                     keyboardType="numeric"
                     disabled={upsertProfile.isPending}
                   />
-                  <Text width={30}>cm</Text>
+                  <Text>ft</Text>
                 </XStack>
-                {errors.heightCm && (
-                  <Text color="$red10" fontSize="$2">
-                    {errors.heightCm.message}
-                  </Text>
-                )}
-              </YStack>
-            )}
-          />
-        ) : (
-          <YStack gap="$1">
-            <XStack gap="$2" alignItems="center">
-              <Controller
-                control={control}
-                name="heightFeet"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <XStack flex={1} gap="$1" alignItems="center">
-                    <Input
-                      flex={1}
-                      placeholder="5"
-                      value={value}
-                      onChangeText={onChange}
-                      onBlur={onBlur}
-                      keyboardType="numeric"
-                      disabled={upsertProfile.isPending}
-                    />
-                    <Text>ft</Text>
-                  </XStack>
-                )}
-              />
-              <Controller
-                control={control}
-                name="heightInches"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <XStack flex={1} gap="$1" alignItems="center">
-                    <Input
-                      flex={1}
-                      placeholder="9"
-                      value={value}
-                      onChangeText={onChange}
-                      onBlur={onBlur}
-                      keyboardType="numeric"
-                      disabled={upsertProfile.isPending}
-                    />
-                    <Text>in</Text>
-                  </XStack>
-                )}
-              />
-            </XStack>
-            {(errors.heightFeet || errors.heightInches) && (
-              <Text color="$red10" fontSize="$2">
-                {errors.heightFeet?.message || errors.heightInches?.message}
-              </Text>
-            )}
-          </YStack>
-        )}
+              )}
+            />
+            <Controller
+              control={control}
+              name="heightInches"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <XStack flex={1} gap="$1" alignItems="center">
+                  <Input
+                    flex={1}
+                    placeholder="9"
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    keyboardType="numeric"
+                    disabled={upsertProfile.isPending}
+                  />
+                  <Text>in</Text>
+                </XStack>
+              )}
+            />
+          </XStack>
+          {(errors.heightFeet || errors.heightInches) && (
+            <Text color="$red10" fontSize="$2">
+              {errors.heightFeet?.message || errors.heightInches?.message}
+            </Text>
+          )}
+        </YStack>
       </YStack>
 
       <YStack gap="$2">
-        <Text>Weight ({isMetric ? 'kg' : 'lbs'})</Text>
+        <Text>Weight (lbs)</Text>
         <Controller
           control={control}
           name="weight"
           render={({ field: { onChange, onBlur, value } }) => (
             <YStack gap="$1">
               <Input
-                placeholder={isMetric ? 'e.g. 70.5' : 'e.g. 154'}
+                placeholder="e.g. 154"
                 value={value}
                 onChangeText={onChange}
                 onBlur={onBlur}
@@ -439,6 +400,45 @@ export function ProfileForm({
                 Separate with commas
               </Text>
             </YStack>
+          )}
+        />
+      </YStack>
+
+      <YStack gap="$2">
+        <Text>Primary Goals</Text>
+        <Controller
+          control={control}
+          name="primaryGoals"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <YStack gap="$1">
+              <Input
+                placeholder="e.g. Weight management, More energy"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                disabled={upsertProfile.isPending}
+              />
+              <Text fontSize="$2" opacity={0.6}>
+                Separate with commas
+              </Text>
+            </YStack>
+          )}
+        />
+      </YStack>
+
+      <YStack gap="$2">
+        <Text>Allergies/Intolerances</Text>
+        <Controller
+          control={control}
+          name="allergies"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <Input
+              placeholder="e.g. nuts, soy, lactose"
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+              disabled={upsertProfile.isPending}
+            />
           )}
         />
       </YStack>
