@@ -1,0 +1,49 @@
+---
+description: How to create and register agentic tools
+globs: server/actions/**
+---
+
+# Agentic Tools
+
+Tools are functions the AI agent can invoke during conversations. They use the [Vercel AI SDK tool API](https://sdk.vercel.ai/docs/ai-sdk-core/tools-and-tool-calling).
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `server/actions/tools.ts` | Tool registry - exports `getActionTools()` |
+| `server/actions/{domain}/*.ts` | Tool implementations by domain |
+| `components/chat/ToolApprovalCard.tsx` | Approval UI (optional custom displays) |
+
+## Adding a Tool
+
+1. Create tool in `server/actions/{domain}/{tool-name}.ts` (see existing tools for patterns)
+2. Register in `server/actions/tools.ts` by adding to `getActionTools()` return object
+3. (Optional) Add custom approval UI in `ToolApprovalCard.tsx`
+
+## Tool Spec
+
+```typescript
+import { type Tool, tool } from 'ai';
+import { z } from 'zod';
+import type { ToolExecutionContext } from '../tools';
+
+const inputSchema = z.object({
+  field: z.string().describe('Description for the AI'),
+});
+
+export const createMyTool = (context: ToolExecutionContext): Tool<...> =>
+  tool({
+    description: 'When to use this tool',
+    inputSchema,
+    needsApproval: true, // Require user confirmation
+    execute: async (input) => {
+      // context.userId available for user-scoped operations
+      return { success: true };
+    },
+  });
+```
+
+## Context
+
+`ToolExecutionContext` provides `userId` and optional `conversationId`.

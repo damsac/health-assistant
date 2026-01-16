@@ -104,7 +104,7 @@ const createFormSchema = (
         .array(z.string())
         .max(2, 'Select up to 2 goals')
         .default([]),
-      dietaryPreferences: z.array(z.string()),
+      dietaryPreferences: z.array(z.string()).default([]),
       allergies: z.string().optional(),
       healthChallenge: z.string().optional(),
     })
@@ -234,7 +234,7 @@ export default function OnboardingScreen() {
   };
 
   const toggleDietary = (option: string) => {
-    const current = selectedDietary;
+    const current = selectedDietary ?? [];
     if (current.includes(option)) {
       setValue(
         'dietaryPreferences',
@@ -429,7 +429,9 @@ export default function OnboardingScreen() {
                         key={option}
                         size="$3"
                         onPress={() => toggleDietary(option)}
-                        opacity={selectedDietary.includes(option) ? 1 : 0.5}
+                        opacity={
+                          (selectedDietary ?? []).includes(option) ? 1 : 0.5
+                        }
                         disabled={upsertProfile.isPending}
                       >
                         {option}
@@ -544,11 +546,48 @@ export default function OnboardingScreen() {
             <Text color="$red10" fontWeight="bold">
               Please fix the following:
             </Text>
+            {errors.age && (
+              <Text color="$red10">
+                • Age: {errors.age.message || 'Invalid age'}
+              </Text>
+            )}
             {errors.gender && (
               <Text color="$red10">• Select your biological sex</Text>
             )}
+            {errors.heightCm && (
+              <Text color="$red10">
+                • Height: {errors.heightCm.message || 'Invalid height'}
+              </Text>
+            )}
+            {errors.heightFeet && (
+              <Text color="$red10">
+                • Height (feet):{' '}
+                {errors.heightFeet.message || 'Invalid feet value'}
+              </Text>
+            )}
+            {errors.heightInches && (
+              <Text color="$red10">
+                • Height (inches):{' '}
+                {errors.heightInches.message || 'Invalid inches value'}
+              </Text>
+            )}
+            {errors.weight && (
+              <Text color="$red10">
+                • Weight: {errors.weight.message || 'Invalid weight'}
+              </Text>
+            )}
             {errors.primaryGoals && (
-              <Text color="$red10">• Select at least 1 primary goal</Text>
+              <Text color="$red10">
+                •{' '}
+                {errors.primaryGoals.message ||
+                  'Select at least 1 primary goal'}
+              </Text>
+            )}
+            {errors.dietaryPreferences && (
+              <Text color="$red10">
+                • Dietary preferences:{' '}
+                {errors.dietaryPreferences.message || 'Invalid selection'}
+              </Text>
             )}
           </YStack>
         )}
