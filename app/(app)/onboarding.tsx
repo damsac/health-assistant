@@ -201,10 +201,12 @@ export default function OnboardingScreen() {
   const selectedDietary = watch('dietaryPreferences');
 
   const onSubmit = async (data: UpsertProfileRequest) => {
+    console.log('Onboarding submit - transformed data:', data);
     try {
       await upsertProfile.mutateAsync(data);
       router.replace('/(app)');
-    } catch {
+    } catch (error) {
+      console.error('Onboarding submit error:', error);
       // handled by mutation
     }
   };
