@@ -22,8 +22,6 @@ import { PROFILE_BOUNDS, type UpsertProfileRequest } from '@/lib/api/profile';
 import { type Gender, genderEnum } from '@/lib/db/schema';
 import { useUpsertProfile } from '@/lib/hooks/use-profile';
 import {
-  cmToFeetInches,
-  convertWeightBetweenSystems,
   feetInchesToCm,
   kgToGrams,
   lbsToKg,
@@ -169,8 +167,7 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const upsertProfile = useUpsertProfile();
-  const [measurementSystem, setMeasurementSystem] =
-    useState<MeasurementSystem>('metric');
+  const [measurementSystem] = useState<MeasurementSystem>('imperial');
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 4;
   const isMetric = measurementSystem === 'metric';
@@ -179,7 +176,6 @@ export default function OnboardingScreen() {
     control,
     handleSubmit,
     setValue,
-    getValues,
     watch,
     formState: { errors },
   } = useForm<FormInput>({
@@ -203,36 +199,6 @@ export default function OnboardingScreen() {
   const selectedGender = watch('gender');
   const selectedGoals = watch('primaryGoals');
   const selectedDietary = watch('dietaryPreferences');
-
-  const handleSystemChange = (newSystem: MeasurementSystem) => {
-    if (newSystem === measurementSystem) return;
-    const values = getValues();
-
-    if (newSystem === 'imperial' && values.heightCm) {
-      const cm = Number.parseFloat(values.heightCm);
-      if (!Number.isNaN(cm)) {
-        const { feet, inches } = cmToFeetInches(cm);
-        setValue('heightFeet', String(feet));
-        setValue('heightInches', String(inches));
-      }
-    } else if (newSystem === 'metric') {
-      const feet = Number.parseFloat(values.heightFeet || '0') || 0;
-      const inches = Number.parseFloat(values.heightInches || '0') || 0;
-      if (feet || inches)
-        setValue('heightCm', String(feetInchesToCm(feet, inches)));
-    }
-
-    if (values.weight) {
-      const w = Number.parseFloat(values.weight);
-      if (!Number.isNaN(w))
-        setValue(
-          'weight',
-          String(convertWeightBetweenSystems(w, measurementSystem, newSystem)),
-        );
-    }
-
-    setMeasurementSystem(newSystem);
-  };
 
   const onSubmit = async (data: UpsertProfileRequest) => {
     try {
@@ -339,106 +305,60 @@ export default function OnboardingScreen() {
       case 2:
         return (
           <YStack gap="$4">
-            <XStack gap="$2">
-              <Button
-                flex={1}
-                onPress={() => handleSystemChange('metric')}
-                opacity={isMetric ? 1 : 0.5}
-              >
-                Metric (cm, kg)
-              </Button>
-              <Button
-                flex={1}
-                onPress={() => handleSystemChange('imperial')}
-                opacity={!isMetric ? 1 : 0.5}
-              >
-                Imperial (ft/in, lbs)
-              </Button>
-            </XStack>
-
             <YStack gap="$2">
               <Text fontSize="$5" fontWeight="bold">
                 Height
               </Text>
-              {isMetric ? (
-                <Controller
-                  control={control}
-                  name="heightCm"
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <YStack gap="$1">
-                      <XStack gap="$2" alignItems="center">
+              <YStack gap="$1">
+                <XStack gap="$2" alignItems="center">
+                  <Controller
+                    control={control}
+                    name="heightFeet"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <XStack flex={1} gap="$1" alignItems="center">
                         <Input
                           flex={1}
-                          placeholder="e.g. 175"
+                          placeholder="5"
                           value={value}
                           onChangeText={onChange}
                           onBlur={onBlur}
                           keyboardType="numeric"
                           disabled={upsertProfile.isPending}
                         />
-                        <Text width={30}>cm</Text>
+                        <Text>ft</Text>
                       </XStack>
-                      {errors.heightCm && (
-                        <Text color="$red10" fontSize="$2">
-                          {errors.heightCm.message}
-                        </Text>
-                      )}
-                    </YStack>
-                  )}
-                />
-              ) : (
-                <YStack gap="$1">
-                  <XStack gap="$2" alignItems="center">
-                    <Controller
-                      control={control}
-                      name="heightFeet"
-                      render={({ field: { onChange, onBlur, value } }) => (
-                        <XStack flex={1} gap="$1" alignItems="center">
-                          <Input
-                            flex={1}
-                            placeholder="5"
-                            value={value}
-                            onChangeText={onChange}
-                            onBlur={onBlur}
-                            keyboardType="numeric"
-                            disabled={upsertProfile.isPending}
-                          />
-                          <Text>ft</Text>
-                        </XStack>
-                      )}
-                    />
-                    <Controller
-                      control={control}
-                      name="heightInches"
-                      render={({ field: { onChange, onBlur, value } }) => (
-                        <XStack flex={1} gap="$1" alignItems="center">
-                          <Input
-                            flex={1}
-                            placeholder="9"
-                            value={value}
-                            onChangeText={onChange}
-                            onBlur={onBlur}
-                            keyboardType="numeric"
-                            disabled={upsertProfile.isPending}
-                          />
-                          <Text>in</Text>
-                        </XStack>
-                      )}
-                    />
-                  </XStack>
-                  {(errors.heightFeet || errors.heightInches) && (
-                    <Text color="$red10" fontSize="$2">
-                      {errors.heightFeet?.message ||
-                        errors.heightInches?.message}
-                    </Text>
-                  )}
-                </YStack>
-              )}
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name="heightInches"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <XStack flex={1} gap="$1" alignItems="center">
+                        <Input
+                          flex={1}
+                          placeholder="9"
+                          value={value}
+                          onChangeText={onChange}
+                          onBlur={onBlur}
+                          keyboardType="numeric"
+                          disabled={upsertProfile.isPending}
+                        />
+                        <Text>in</Text>
+                      </XStack>
+                    )}
+                  />
+                </XStack>
+                {(errors.heightFeet || errors.heightInches) && (
+                  <Text color="$red10" fontSize="$2">
+                    {errors.heightFeet?.message || errors.heightInches?.message}
+                  </Text>
+                )}
+              </YStack>
             </YStack>
 
             <YStack gap="$2">
               <Text fontSize="$5" fontWeight="bold">
-                Current Weight
+                Current Weight (lbs)
               </Text>
               <Controller
                 control={control}
@@ -446,7 +366,7 @@ export default function OnboardingScreen() {
                 render={({ field: { onChange, onBlur, value } }) => (
                   <YStack gap="$1">
                     <Input
-                      placeholder={isMetric ? 'e.g. 70.5' : 'e.g. 154'}
+                      placeholder="e.g. 154"
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
