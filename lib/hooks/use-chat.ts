@@ -1,6 +1,9 @@
 import { type UIMessage, useChat as useAIChat } from '@ai-sdk/react';
 import { useQueryClient } from '@tanstack/react-query';
-import { TextStreamChatTransport } from 'ai';
+import {
+  DefaultChatTransport,
+  lastAssistantMessageIsCompleteWithApprovalResponses,
+} from 'ai';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   type ConversationListResponse,
@@ -60,7 +63,7 @@ export function useChat(options: UseChatOptions = {}) {
 
   const transport = useMemo(
     () =>
-      new TextStreamChatTransport({
+      new DefaultChatTransport({
         api: `${config.agent.url}/chat`,
         credentials: 'include',
         body: () => ({
@@ -73,6 +76,8 @@ export function useChat(options: UseChatOptions = {}) {
   const chat = useAIChat({
     id: chatInstanceId,
     transport,
+    // Auto-continue after user approves/denies tool execution
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
     onFinish: async () => {
       // New chat: detect server-assigned conversation ID
       if (!getEffectiveId()) {
