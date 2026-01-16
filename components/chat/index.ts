@@ -5,6 +5,11 @@
  * and conversation management.
  */
 
+// Tool approval cards
+export { GenericToolCard } from './approval/GenericToolCard';
+export { GoalsCard } from './approval/GoalsCard';
+export { ProfileUpdateCard } from './approval/ProfileUpdateCard';
+export type { ApprovalStatus } from './approval/shared';
 // Components
 export { ConversationItem } from './ConversationItem';
 // Formatters (for custom usage)
