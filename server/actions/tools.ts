@@ -1,3 +1,4 @@
+import { createGoalsTool } from './goals/manage-goals';
 import { createProfileUpdateTool } from './user-profile/update-user-profile';
 
 /**
@@ -14,6 +15,7 @@ export type ToolExecutionContext = {
 export function getActionTools(context: ToolExecutionContext) {
   return {
     proposeProfileUpdate: createProfileUpdateTool(context),
+    manageGoals: createGoalsTool(context),
   } as const;
 }
 

@@ -197,6 +197,26 @@ export const garminConnection = pgTable(
   (table) => [index('idx_garmin_connection_user_id').on(table.userId)],
 );
 
+// User goals - simple health/wellness goals
+export const goalStatusEnum = ['active', 'completed', 'abandoned'] as const;
+export type GoalStatus = (typeof goalStatusEnum)[number];
+
+export const userGoal = pgTable(
+  'user_goal',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    description: text('description'),
+    status: text('status').notNull().$type<GoalStatus>().default('active'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [index('idx_user_goal_user_id').on(table.userId)],
+);
+
 // Health metrics from Garmin - stores all health data points
 export const healthMetric = pgTable(
   'health_metric',

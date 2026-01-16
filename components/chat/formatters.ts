@@ -145,11 +145,98 @@ export function buildProfileChanges(args: unknown): DisplayChange[] {
 }
 
 // ============================================================================
+// Goals Formatters
+// ============================================================================
+
+export type GoalActionInput = {
+  action: 'create' | 'update' | 'delete' | 'list';
+  goalId?: string;
+  title?: string;
+  description?: string;
+  status?: 'active' | 'completed' | 'abandoned';
+};
+
+export type GoalDisplayInfo = {
+  action: string;
+  actionLabel: string;
+  details: Array<{ label: string; value: string }>;
+};
+
+/**
+ * Format goal action for display
+ */
+export function formatGoalAction(args: unknown): GoalDisplayInfo {
+  if (!args || typeof args !== 'object') {
+    return {
+      action: 'unknown',
+      actionLabel: 'Unknown Action',
+      details: [],
+    };
+  }
+
+  const input = args as GoalActionInput;
+  const details: Array<{ label: string; value: string }> = [];
+
+  let actionLabel = '';
+  switch (input.action) {
+    case 'create':
+      actionLabel = 'Create New Goal';
+      if (input.title) {
+        details.push({ label: 'Title', value: input.title });
+      }
+      if (input.description) {
+        details.push({ label: 'Description', value: input.description });
+      }
+      if (input.status) {
+        details.push({
+          label: 'Status',
+          value: input.status.charAt(0).toUpperCase() + input.status.slice(1),
+        });
+      }
+      break;
+
+    case 'update':
+      actionLabel = 'Update Goal';
+      if (input.title) {
+        details.push({ label: 'New Title', value: input.title });
+      }
+      if (input.description) {
+        details.push({ label: 'New Description', value: input.description });
+      }
+      if (input.status) {
+        details.push({
+          label: 'New Status',
+          value: input.status.charAt(0).toUpperCase() + input.status.slice(1),
+        });
+      }
+      break;
+
+    case 'delete':
+      actionLabel = 'Delete Goal';
+      details.push({
+        label: 'Action',
+        value: 'This goal will be permanently deleted',
+      });
+      break;
+
+    default:
+      actionLabel = 'Unknown Action';
+  }
+
+  return {
+    action: input.action,
+    actionLabel,
+    details,
+  };
+}
+
+// ============================================================================
 // Tool Display Formatters
 // ============================================================================
 
 const TOOL_DISPLAY_NAMES: Record<string, string> = {
   proposeProfileUpdate: 'Update Profile',
+  manageGoals: 'Manage Goals',
 };
 
 /**
