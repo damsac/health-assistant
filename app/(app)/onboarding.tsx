@@ -227,9 +227,13 @@ export default function OnboardingScreen() {
       setValue(
         'primaryGoals',
         current.filter((g: string) => g !== goal),
+        { shouldValidate: true, shouldDirty: true },
       );
     } else if (current.length < 2) {
-      setValue('primaryGoals', [...current, goal]);
+      setValue('primaryGoals', [...current, goal], {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
     }
   };
 
@@ -289,7 +293,10 @@ export default function OnboardingScreen() {
                     key={g}
                     size="$3"
                     onPress={() =>
-                      setValue('gender', selectedGender === g ? '' : g)
+                      setValue('gender', selectedGender === g ? '' : g, {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      })
                     }
                     opacity={selectedGender === g ? 1 : 0.5}
                     disabled={upsertProfile.isPending}
