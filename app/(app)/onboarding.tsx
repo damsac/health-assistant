@@ -145,6 +145,8 @@ const createFormSchema = (
         dietaryPreferences: data.dietaryPreferences.length
           ? data.dietaryPreferences
           : null,
+        primaryGoals: data.primaryGoals?.length ? data.primaryGoals : null,
+        allergies: data.allergies || null,
         // Include all other fields with null defaults
         sleepHoursAverage: null,
         sleepQuality: null,

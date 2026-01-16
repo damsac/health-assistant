@@ -106,6 +106,8 @@ export const userProfile = pgTable(
     dietaryPreferences: text('dietary_preferences').array(),
     dateOfBirth: timestamp('date_of_birth'),
     measurementSystem: text('measurement_system').default('metric'),
+    primaryGoals: text('primary_goals').array(),
+    allergies: text('allergies'),
 
     // New fields for progressive profile completion
     sleepHoursAverage: decimal('sleep_hours_average', {

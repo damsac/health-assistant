@@ -1,3 +1,6 @@
+---
+trigger: always_on
+---
 # Git Commit Guidelines
 
 ## Commit Timing
@@ -57,6 +60,3 @@ Ask yourself:
 - Messages like "update file.tsx" or "fix bug"
 - Committing every file save
 - Technical jargon without context in the "Why" section---
-trigger: manual
----
-

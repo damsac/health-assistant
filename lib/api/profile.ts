@@ -38,6 +38,8 @@ export const upsertProfileSchema = z
       .nullable(),
     measurementSystem: z.enum(['metric', 'imperial']),
     dietaryPreferences: z.array(z.string()).nullable(),
+    primaryGoals: z.array(z.string()).nullable(),
+    allergies: z.string().nullable(),
     // New fields for progressive profile completion
     sleepHoursAverage: z
       .number()

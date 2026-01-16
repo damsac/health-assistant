@@ -78,6 +78,8 @@ const createFormSchema = (
           'Use YYYY-MM-DD',
         ),
       dietaryPreferences: z.string(),
+      primaryGoals: z.string(),
+      allergies: z.string(),
     })
     .transform((data): UpsertProfileRequest => {
       let heightCmVal: number | null = null;
@@ -104,6 +106,11 @@ const createFormSchema = (
         .map((s) => s.trim())
         .filter(Boolean);
 
+      const goals = data.primaryGoals
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
       return {
         heightCm: heightCmVal,
         weightGrams,
@@ -113,6 +120,8 @@ const createFormSchema = (
           : null,
         measurementSystem,
         dietaryPreferences: prefs.length ? prefs : null,
+        primaryGoals: goals.length ? goals : null,
+        allergies: data.allergies || null,
         // Include all other fields with null defaults
         sleepHoursAverage: null,
         sleepQuality: null,
@@ -142,6 +151,8 @@ type InitialProfile = {
   dateOfBirth: Date | null;
   measurementSystem: string | null;
   dietaryPreferences: string[] | null;
+  primaryGoals: string[] | null;
+  allergies: string | null;
 };
 
 type ProfileFormProps = {
@@ -169,6 +180,8 @@ function getInitialValues(
       gender: '',
       dateOfBirth: '',
       dietaryPreferences: '',
+      primaryGoals: '',
+      allergies: '',
     };
   }
 
@@ -202,6 +215,8 @@ function getInitialValues(
       ? formatDateForInput(profile.dateOfBirth)
       : '',
     dietaryPreferences: profile.dietaryPreferences?.join(', ') || '',
+    primaryGoals: profile.primaryGoals?.join(', ') || '',
+    allergies: profile.allergies || '',
   };
 }
 
@@ -464,6 +479,45 @@ export function ProfileForm({
                 Separate with commas
               </Text>
             </YStack>
+          )}
+        />
+      </YStack>
+
+      <YStack gap="$2">
+        <Text>Primary Goals</Text>
+        <Controller
+          control={control}
+          name="primaryGoals"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <YStack gap="$1">
+              <Input
+                placeholder="e.g. Weight management, More energy"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                disabled={upsertProfile.isPending}
+              />
+              <Text fontSize="$2" opacity={0.6}>
+                Separate with commas
+              </Text>
+            </YStack>
+          )}
+        />
+      </YStack>
+
+      <YStack gap="$2">
+        <Text>Allergies/Intolerances</Text>
+        <Controller
+          control={control}
+          name="allergies"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <Input
+              placeholder="e.g. nuts, soy, lactose"
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+              disabled={upsertProfile.isPending}
+            />
           )}
         />
       </YStack>

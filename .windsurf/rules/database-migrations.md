@@ -1,7 +1,8 @@
 ---
+trigger: always_on
+---
 description: Database migration workflow using Drizzle ORM
 globs: lib/db/schema.ts, supabase/migrations/**
-trigger: always_on
 ---
 
 # Database Migrations
@@ -20,3 +21,5 @@ trigger: always_on
 | `bun run db:generate` | Generate SQL migration from schema diff |
 | `bun run db:migrate` | Apply pending migrations |
 | `bun run db:push` | Direct schema push (dev only, skips migrations) |
+
+

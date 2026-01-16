@@ -1,6 +1,7 @@
 ---
 description: App architecture and style guide
 alwaysApply: true
+trigger: always_on
 ---
 
 # App Architecture
