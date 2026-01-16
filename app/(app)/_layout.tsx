@@ -1,23 +1,12 @@
 import { Redirect, Stack, useSegments } from 'expo-router';
 import { Suspense } from 'react';
-import { Spinner, Text, YStack } from 'tamagui';
+import { YStack } from 'tamagui';
+import { LoadingState, TabBar } from '@/components/ui';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useProfile } from '@/lib/hooks/use-profile';
 
 function LoadingScreen() {
-  return (
-    <YStack
-      flex={1}
-      justifyContent="center"
-      alignItems="center"
-      backgroundColor="$background"
-    >
-      <Spinner size="large" color="$blue10" />
-      <Text marginTop="$4" color="$color11">
-        Loading...
-      </Text>
-    </YStack>
-  );
+  return <LoadingState />;
 }
 
 function ProfileAwareStack() {
@@ -37,12 +26,21 @@ function ProfileAwareStack() {
     return <Redirect href="/(app)" />;
   }
 
+  const showTabBar = !isOnOnboarding;
+
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
-      <Stack.Screen name="onboarding" />
-      <Stack.Screen name="chat" />
-    </Stack>
+    <YStack flex={1}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="onboarding" />
+        <Stack.Screen name="chat" />
+        <Stack.Screen name="health-stats" />
+        <Stack.Screen name="edit-profile" />
+        <Stack.Screen name="garmin" />
+        <Stack.Screen name="(profile)" />
+      </Stack>
+      {showTabBar && <TabBar />}
+    </YStack>
   );
 }
 

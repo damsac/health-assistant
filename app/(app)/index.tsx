@@ -61,7 +61,7 @@ export default function HomeScreen() {
       <YStack
         flex={1}
         paddingTop={insets.top + 20}
-        paddingBottom={insets.bottom}
+        paddingBottom="$4"
         paddingHorizontal="$4"
         gap="$4"
       >
@@ -74,18 +74,6 @@ export default function HomeScreen() {
           <H2>User</H2>
           <Text>Name: {user?.name || '-'}</Text>
           <Text>Email: {user?.email || '-'}</Text>
-        </YStack>
-
-        <YStack gap="$2">
-          <Button onPress={() => router.push('/(app)/chat')}>
-            Health Chat
-          </Button>
-          <Button onPress={() => router.push('/(app)/health-stats' as any)}>
-            Health Stats
-          </Button>
-          <Button onPress={() => router.push('/(app)/garmin')}>
-            Connect Garmin
-          </Button>
         </YStack>
 
         <YStack gap="$2">
