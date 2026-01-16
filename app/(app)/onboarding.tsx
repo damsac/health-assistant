@@ -101,14 +101,10 @@ const createFormSchema = (
         (n) => n === null || (n >= minW && n <= maxW),
         `${minW}-${maxW} ${isMetric ? 'kg' : 'lbs'}`,
       ),
-      gender: z
-        .enum([...genderEnum, ''])
-        .optional()
-        .default(''),
+      gender: z.enum([...genderEnum, '']).default(''),
       primaryGoals: z
         .array(z.string())
         .max(2, 'Select up to 2 goals')
-        .optional()
         .default([]),
       dietaryPreferences: z.array(z.string()),
       allergies: z.string().optional(),
@@ -204,6 +200,7 @@ export default function OnboardingScreen() {
     },
   });
 
+  const selectedGender = watch('gender');
   const selectedGoals = watch('primaryGoals');
   const selectedDietary = watch('dietaryPreferences');
 
@@ -320,25 +317,21 @@ export default function OnboardingScreen() {
               <Text fontSize="$5" fontWeight="bold">
                 Biological Sex
               </Text>
-              <Controller
-                control={control}
-                name="gender"
-                render={({ field: { onChange, value } }) => (
-                  <XStack gap="$2" flexWrap="wrap">
-                    {genderEnum.map((g) => (
-                      <Button
-                        key={g}
-                        size="$3"
-                        onPress={() => onChange(value === g ? '' : g)}
-                        opacity={value === g ? 1 : 0.5}
-                        disabled={upsertProfile.isPending}
-                      >
-                        {genderLabels[g]}
-                      </Button>
-                    ))}
-                  </XStack>
-                )}
-              />
+              <XStack gap="$2" flexWrap="wrap">
+                {genderEnum.map((g) => (
+                  <Button
+                    key={g}
+                    size="$3"
+                    onPress={() =>
+                      setValue('gender', selectedGender === g ? '' : g)
+                    }
+                    opacity={selectedGender === g ? 1 : 0.5}
+                    disabled={upsertProfile.isPending}
+                  >
+                    {genderLabels[g]}
+                  </Button>
+                ))}
+              </XStack>
             </YStack>
           </YStack>
         );
@@ -482,25 +475,19 @@ export default function OnboardingScreen() {
               <Text fontSize="$2" opacity={0.7}>
                 Select up to 2
               </Text>
-              <Controller
-                control={control}
-                name="primaryGoals"
-                render={() => (
-                  <XStack gap="$2" flexWrap="wrap">
-                    {primaryGoals.map((goal) => (
-                      <Button
-                        key={goal}
-                        size="$3"
-                        onPress={() => toggleGoal(goal)}
-                        opacity={(selectedGoals ?? []).includes(goal) ? 1 : 0.5}
-                        disabled={upsertProfile.isPending}
-                      >
-                        {goal}
-                      </Button>
-                    ))}
-                  </XStack>
-                )}
-              />
+              <XStack gap="$2" flexWrap="wrap">
+                {primaryGoals.map((goal) => (
+                  <Button
+                    key={goal}
+                    size="$3"
+                    onPress={() => toggleGoal(goal)}
+                    opacity={(selectedGoals ?? []).includes(goal) ? 1 : 0.5}
+                    disabled={upsertProfile.isPending}
+                  >
+                    {goal}
+                  </Button>
+                ))}
+              </XStack>
               {errors.primaryGoals && (
                 <Text color="$red10" fontSize="$2">
                   {errors.primaryGoals.message}
