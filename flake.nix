@@ -20,6 +20,8 @@
             biome
             git
             watchman
+            docker
+            docker-compose
           ];
 
           env = {
@@ -32,14 +34,16 @@
             echo "================================================"
             echo ""
             echo "Available commands:"
-            echo "  bun install     - Install dependencies"
-            echo "  bun run dev     - Start Supabase + Expo"
-            echo "  bun run dev:web - Start Supabase + Expo (web only)"
-            echo "  bun run lint    - Lint with Biome"
-            echo "  bun run format  - Format with Biome"
-            echo "  bun run check   - Check with Biome (lint + format)"
+            echo "  bun install         - Install dependencies"
+            echo "  bun run dev         - Start Supabase + Expo"
+            echo "  bun run dev:web     - Start Supabase + Expo (web only)"
+            echo "  docker-compose up   - Start Docker services (if needed)"
+            echo "  supabase start      - Start Supabase locally"
+            echo "  bun run lint        - Lint with Biome"
+            echo "  bun run format      - Format with Biome"
+            echo "  bun run check       - Check with Biome (lint + format)"
             echo ""
-            echo "Node: $(node --version) | Bun: $(bun --version)"
+            echo "Node: $(node --version) | Bun: $(bun --version) | Docker: $(docker --version)"
             echo ""
           '';
         };
