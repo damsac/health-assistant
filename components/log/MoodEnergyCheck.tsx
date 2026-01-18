@@ -4,19 +4,19 @@ import { Text, XStack, YStack } from '@/components/ui';
 import { useCreateDailyLog, useTodaySummary } from '@/lib/hooks/use-daily-log';
 
 const MOOD_OPTIONS = [
-  { value: 1, label: 'Rough', color: '$red9' },
-  { value: 2, label: 'Low', color: '$orange9' },
-  { value: 3, label: 'OK', color: '$yellow9' },
-  { value: 4, label: 'Good', color: '$green9' },
-  { value: 5, label: 'Great', color: '$blue9' },
+  { value: 1, label: 'Rough', color: '$red9' as const },
+  { value: 2, label: 'Low', color: '$orange9' as const },
+  { value: 3, label: 'OK', color: '$yellow9' as const },
+  { value: 4, label: 'Good', color: '$green9' as const },
+  { value: 5, label: 'Great', color: '$blue9' as const },
 ];
 
 const ENERGY_OPTIONS = [
-  { value: 1, label: 'Tired', color: '$red9' },
-  { value: 2, label: 'Low', color: '$orange9' },
-  { value: 3, label: 'OK', color: '$yellow9' },
-  { value: 4, label: 'Good', color: '$green9' },
-  { value: 5, label: 'High', color: '$blue9' },
+  { value: 1, label: 'Tired', color: '$red9' as const },
+  { value: 2, label: 'Low', color: '$orange9' as const },
+  { value: 3, label: 'OK', color: '$yellow9' as const },
+  { value: 4, label: 'Good', color: '$green9' as const },
+  { value: 5, label: 'High', color: '$blue9' as const },
 ];
 
 type ScaleSelectorProps = {
@@ -63,7 +63,9 @@ function ScaleSelector({
               style={{ flex: 1 }}
             >
               <YStack
-                backgroundColor={isSelected ? option.color : '$color3'}
+                backgroundColor={
+                  (isSelected ? option.color : '$color3') as '$background'
+                }
                 padding="$2"
                 borderRadius="$3"
                 alignItems="center"

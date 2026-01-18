@@ -116,7 +116,7 @@ function validate(data: OnboardingData): ValidationErrors {
   if (data.age) {
     const age = parseInt(data.age, 10);
     if (
-      isNaN(age) ||
+      Number.isNaN(age) ||
       age < PROFILE_BOUNDS.age.min ||
       age > PROFILE_BOUNDS.age.max
     ) {
@@ -130,7 +130,7 @@ function validate(data: OnboardingData): ValidationErrors {
   } else {
     const weight = parseFloat(data.weight);
     if (
-      isNaN(weight) ||
+      Number.isNaN(weight) ||
       weight < PROFILE_BOUNDS.weightLbs.min ||
       weight > PROFILE_BOUNDS.weightLbs.max
     ) {
@@ -141,13 +141,13 @@ function validate(data: OnboardingData): ValidationErrors {
   // Height validation (optional but if provided, must be valid)
   if (data.heightFeet) {
     const feet = parseInt(data.heightFeet, 10);
-    if (isNaN(feet) || feet < 0 || feet > 9) {
+    if (Number.isNaN(feet) || feet < 0 || feet > 9) {
       errors.heightFeet = 'Feet must be 0-9';
     }
   }
   if (data.heightInches) {
     const inches = parseInt(data.heightInches, 10);
-    if (isNaN(inches) || inches < 0 || inches >= 12) {
+    if (Number.isNaN(inches) || inches < 0 || inches >= 12) {
       errors.heightInches = 'Inches must be 0-11';
     }
   }
@@ -176,7 +176,7 @@ function toApiRequest(data: OnboardingData): UpsertProfileRequest {
   let dateOfBirth: string | null = null;
   if (data.age) {
     const age = parseInt(data.age, 10);
-    if (!isNaN(age)) {
+    if (!Number.isNaN(age)) {
       dateOfBirth = new Date(
         new Date().getFullYear() - age,
         0,
@@ -206,30 +206,20 @@ export default function OnboardingScreen() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<OnboardingData>(defaultData);
   const [errors, setErrors] = useState<ValidationErrors>({});
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [_isInitialized, setIsInitialized] = useState(false);
 
   const totalSteps = 4;
-
-  // Load persisted data on mount
-  useEffect(() => {
-    const persisted = loadPersistedData();
-    setFormData(persisted);
-    setIsInitialized(true);
-  }, []);
-
-  // Persist data on change
-  useEffect(() => {
-    if (isInitialized) {
-      persistData(formData);
-    }
-  }, [formData, isInitialized]);
 
   const updateField = <K extends keyof OnboardingData>(
     field: K,
     value: OnboardingData[K],
   ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error for this field
+    setFormData((prev) => {
+      const updated = { ...prev, [field]: value };
+      persistData(updated);
+      return updated;
+    });
+    // Clear error for this field when user updates it
     if (field in errors) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -238,6 +228,13 @@ export default function OnboardingScreen() {
       });
     }
   };
+
+  // Load persisted data on mount
+  useEffect(() => {
+    const persisted = loadPersistedData();
+    setFormData(persisted);
+    setIsInitialized(true);
+  }, []);
 
   const toggleGoal = (goal: string) => {
     setFormData((prev) => {
@@ -288,7 +285,7 @@ export default function OnboardingScreen() {
       const request = toApiRequest(formData);
       await upsertProfile.mutateAsync(request);
       clearPersistedData();
-      router.replace('/(app)/(tabs)' as any);
+      router.replace('/(app)');
     } catch {
       // Error handled by mutation
     }
