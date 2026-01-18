@@ -22,7 +22,7 @@ function ProfileAwareStack() {
   }
 
   if (profile && isOnOnboarding) {
-    return <Redirect href="/(app)/(tabs)" as any />;
+    return <Redirect href="/(app)/(tabs)" />;
   }
 
   return (
