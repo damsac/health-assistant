@@ -59,7 +59,9 @@ const dietaryOptions = [
 // Simple coercion helper - returns null for empty/invalid
 const optionalNumber = z
   .string()
-  .transform((v) => (v === '' ? null : Number(v)))
+  .optional()
+  .default('')
+  .transform((v) => (v === '' || v === undefined ? null : Number(v)))
   .pipe(
     z
       .number()
@@ -376,7 +378,7 @@ export default function OnboardingScreen() {
                   <YStack gap="$1">
                     <Input
                       placeholder="e.g. 154"
-                      value={value}
+                      value={value ?? ''}
                       onChangeText={onChange}
                       onBlur={onBlur}
                       keyboardType="decimal-pad"
@@ -558,6 +560,19 @@ export default function OnboardingScreen() {
             )}
             {errors.primaryGoals && (
               <Text color="$red10">• Select at least 1 primary goal</Text>
+            )}
+            {errors.weight && (
+              <Text color="$red10">• {errors.weight.message}</Text>
+            )}
+            {errors.age && <Text color="$red10">• {errors.age.message}</Text>}
+            {errors.heightCm && (
+              <Text color="$red10">• {errors.heightCm.message}</Text>
+            )}
+            {errors.heightFeet && (
+              <Text color="$red10">• {errors.heightFeet.message}</Text>
+            )}
+            {errors.heightInches && (
+              <Text color="$red10">• {errors.heightInches.message}</Text>
             )}
           </YStack>
         )}
