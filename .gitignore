@@ -48,3 +48,4 @@ devenv.lock
 
 # direnv
 .direnv/
+.trees/
