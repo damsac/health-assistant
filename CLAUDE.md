@@ -54,6 +54,23 @@ supabase/     # Database migrations
 | `bun run db:push` | Push schema to database |
 | `bun run db:studio` | Open Drizzle Studio |
 
+## Git Worktree Flow
+
+Use worktrees in `.trees/` to work on multiple features simultaneously:
+
+```bash
+# Create worktree for a new feature
+git worktree add .trees/feature-name -b feature/feature-name
+
+# List active worktrees
+git worktree list
+
+# Remove when done (after merging)
+git worktree remove .trees/feature-name
+```
+
+Each worktree is an isolated checkout sharing the same `.git` - changes in one don't affect others until merged.
+
 ## Skills & References
 
 - `.claude/skills/update-context/` - Maintaining this CLAUDE.md file
