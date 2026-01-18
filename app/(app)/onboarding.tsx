@@ -1,32 +1,20 @@
 /**
  * Onboarding Screen
- * Multi-step form for collecting user's basic health profile information
- * including age, height, weight, gender, goals, and dietary preferences.
- * Uses React Hook Form with Zod validation for type-safe form handling.
+ * Multi-step form for collecting user's basic health profile information.
+ * Uses simple React state with localStorage persistence.
  */
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import {
-  Controller,
-  type Resolver,
-  type SubmitHandler,
-  useForm,
-} from 'react-hook-form';
+import { useEffect, useState } from 'react';
 import { ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { z } from 'zod';
 import { Button, Input, Spinner, Text, XStack, YStack } from '@/components/ui';
 import { PROFILE_BOUNDS, type UpsertProfileRequest } from '@/lib/api/profile';
 import { type Gender, genderEnum } from '@/lib/db/schema';
 import { useUpsertProfile } from '@/lib/hooks/use-profile';
-import {
-  feetInchesToCm,
-  kgToGrams,
-  lbsToKg,
-  type MeasurementSystem,
-} from '@/lib/units';
+import { feetInchesToCm, kgToGrams, lbsToKg } from '@/lib/units';
+
+const STORAGE_KEY = 'onboarding_form';
 
 const genderLabels: Record<Gender, string> = {
   male: 'Male',
@@ -35,7 +23,7 @@ const genderLabels: Record<Gender, string> = {
   prefer_not_to_say: 'Prefer not to say',
 };
 
-const primaryGoals = [
+const primaryGoalOptions = [
   'Weight management',
   'More energy',
   'Better digestion',
@@ -56,196 +44,254 @@ const dietaryOptions = [
   'None',
 ] as const;
 
-// Simple coercion helper - returns null for empty/invalid
-const optionalNumber = z
-  .string()
-  .transform((v) => (v === '' ? null : Number(v)))
-  .pipe(
-    z
-      .number()
-      .nullable()
-      .refine((n) => n === null || !Number.isNaN(n), 'Must be a valid number'),
-  );
+interface OnboardingData {
+  age: string;
+  gender: Gender | '';
+  heightFeet: string;
+  heightInches: string;
+  weight: string;
+  primaryGoals: string[];
+  dietaryPreferences: string[];
+  allergies: string;
+  healthChallenge: string;
+}
 
-// Form schema
-const createFormSchema = (
-  isMetric: boolean,
-  measurementSystem: MeasurementSystem,
-) => {
-  const { heightCm, weightKg, weightLbs } = PROFILE_BOUNDS;
-  const [minW, maxW] = isMetric
-    ? [weightKg.min, weightKg.max]
-    : [weightLbs.min, weightLbs.max];
-
-  return z
-    .object({
-      age: optionalNumber.refine(
-        (n) => n === null || (n >= 13 && n <= 120),
-        'Age must be between 13 and 120',
-      ),
-      heightCm: optionalNumber.refine(
-        (n) => n === null || (n >= heightCm.min && n <= heightCm.max),
-        `${heightCm.min}-${heightCm.max} cm`,
-      ),
-      heightFeet: optionalNumber.refine(
-        (n) => n === null || (n >= 0 && n <= 9),
-        '0-9 ft',
-      ),
-      heightInches: optionalNumber.refine(
-        (n) => n === null || (n >= 0 && n < 12),
-        '0-11 in',
-      ),
-      weight: optionalNumber.refine(
-        (n) => n === null || (n >= minW && n <= maxW),
-        `${minW}-${maxW} ${isMetric ? 'kg' : 'lbs'}`,
-      ),
-      gender: z.enum([...genderEnum, '']).default(''),
-      primaryGoals: z
-        .array(z.string())
-        .max(2, 'Select up to 2 goals')
-        .default([]),
-      dietaryPreferences: z.array(z.string()).default([]),
-      allergies: z.string().optional(),
-      healthChallenge: z.string().optional(),
-    })
-    .transform((data): UpsertProfileRequest => {
-      let heightCmVal: number | null = null;
-      if (isMetric && data.heightCm !== null) {
-        heightCmVal = Math.round(data.heightCm);
-      } else if (
-        !isMetric &&
-        (data.heightFeet !== null || data.heightInches !== null)
-      ) {
-        heightCmVal = feetInchesToCm(
-          data.heightFeet ?? 0,
-          data.heightInches ?? 0,
-        );
-      }
-
-      let weightGrams: number | null = null;
-      if (data.weight !== null) {
-        const kg = isMetric ? data.weight : lbsToKg(data.weight);
-        weightGrams = kgToGrams(kg);
-      }
-
-      return {
-        heightCm: heightCmVal,
-        weightGrams,
-        gender: data.gender === '' ? null : data.gender,
-        dateOfBirth: data.age
-          ? new Date(new Date().getFullYear() - data.age, 0, 1).toISOString()
-          : null,
-        measurementSystem,
-        dietaryPreferences: data.dietaryPreferences.length
-          ? data.dietaryPreferences
-          : null,
-        primaryGoals: data.primaryGoals?.length ? data.primaryGoals : null,
-        allergies: data.allergies || null,
-        // Include all other fields with null defaults
-        sleepHoursAverage: null,
-        sleepQuality: null,
-        typicalWakeTime: null,
-        typicalBedTime: null,
-        mealsPerDay: null,
-        typicalMealTimes: null,
-        snackingHabits: null,
-        supplementsMedications: null,
-        healthConditions: null,
-        stressLevel: null,
-        exerciseFrequency: null,
-        exerciseTypes: null,
-        waterIntakeLiters: null,
-        garminConnected: false,
-        garminUserId: null,
-      };
-    });
+const defaultData: OnboardingData = {
+  age: '',
+  gender: '',
+  heightFeet: '',
+  heightInches: '',
+  weight: '',
+  primaryGoals: [],
+  dietaryPreferences: [],
+  allergies: '',
+  healthChallenge: '',
 };
 
-type FormInput = z.input<ReturnType<typeof createFormSchema>>;
+function loadPersistedData(): OnboardingData {
+  try {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        return { ...defaultData, ...JSON.parse(stored) };
+      }
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return defaultData;
+}
+
+function persistData(data: OnboardingData) {
+  try {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+function clearPersistedData() {
+  try {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+interface ValidationErrors {
+  age?: string;
+  weight?: string;
+  heightFeet?: string;
+  heightInches?: string;
+}
+
+function validate(data: OnboardingData): ValidationErrors {
+  const errors: ValidationErrors = {};
+
+  // Age validation (optional but if provided, must be valid)
+  if (data.age) {
+    const age = parseInt(data.age, 10);
+    if (
+      isNaN(age) ||
+      age < PROFILE_BOUNDS.age.min ||
+      age > PROFILE_BOUNDS.age.max
+    ) {
+      errors.age = `Age must be between ${PROFILE_BOUNDS.age.min} and ${PROFILE_BOUNDS.age.max}`;
+    }
+  }
+
+  // Weight validation (required)
+  if (!data.weight) {
+    errors.weight = 'Weight is required';
+  } else {
+    const weight = parseFloat(data.weight);
+    if (
+      isNaN(weight) ||
+      weight < PROFILE_BOUNDS.weightLbs.min ||
+      weight > PROFILE_BOUNDS.weightLbs.max
+    ) {
+      errors.weight = `Weight must be between ${PROFILE_BOUNDS.weightLbs.min} and ${PROFILE_BOUNDS.weightLbs.max} lbs`;
+    }
+  }
+
+  // Height validation (optional but if provided, must be valid)
+  if (data.heightFeet) {
+    const feet = parseInt(data.heightFeet, 10);
+    if (isNaN(feet) || feet < 0 || feet > 9) {
+      errors.heightFeet = 'Feet must be 0-9';
+    }
+  }
+  if (data.heightInches) {
+    const inches = parseInt(data.heightInches, 10);
+    if (isNaN(inches) || inches < 0 || inches >= 12) {
+      errors.heightInches = 'Inches must be 0-11';
+    }
+  }
+
+  return errors;
+}
+
+function toApiRequest(data: OnboardingData): UpsertProfileRequest {
+  // Convert height to cm
+  let heightCm: number | null = null;
+  if (data.heightFeet || data.heightInches) {
+    const feet = parseInt(data.heightFeet, 10) || 0;
+    const inches = parseInt(data.heightInches, 10) || 0;
+    heightCm = feetInchesToCm(feet, inches);
+  }
+
+  // Convert weight to grams
+  let weightGrams: number | null = null;
+  if (data.weight) {
+    const lbs = parseFloat(data.weight);
+    const kg = lbsToKg(lbs);
+    weightGrams = kgToGrams(kg);
+  }
+
+  // Convert age to date of birth
+  let dateOfBirth: string | null = null;
+  if (data.age) {
+    const age = parseInt(data.age, 10);
+    if (!isNaN(age)) {
+      dateOfBirth = new Date(
+        new Date().getFullYear() - age,
+        0,
+        1,
+      ).toISOString();
+    }
+  }
+
+  return {
+    heightCm,
+    weightGrams,
+    gender: data.gender || null,
+    dateOfBirth,
+    measurementSystem: 'imperial',
+    dietaryPreferences:
+      data.dietaryPreferences.length > 0 ? data.dietaryPreferences : null,
+    primaryGoals: data.primaryGoals.length > 0 ? data.primaryGoals : null,
+    allergies: data.allergies || null,
+  };
+}
 
 export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const upsertProfile = useUpsertProfile();
-  const [measurementSystem] = useState<MeasurementSystem>('imperial');
+
   const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState<OnboardingData>(defaultData);
+  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [isInitialized, setIsInitialized] = useState(false);
+
   const totalSteps = 4;
-  const isMetric = measurementSystem === 'metric';
 
-  const {
-    control,
-    handleSubmit,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useForm<FormInput>({
-    resolver: zodResolver(
-      createFormSchema(isMetric, measurementSystem),
-    ) as unknown as Resolver<FormInput>,
-    defaultValues: {
-      age: '',
-      heightCm: '',
-      heightFeet: '',
-      heightInches: '',
-      weight: '',
-      gender: '',
-      primaryGoals: [],
-      dietaryPreferences: [],
-      allergies: '',
-      healthChallenge: '',
-    },
-  });
+  // Load persisted data on mount
+  useEffect(() => {
+    const persisted = loadPersistedData();
+    setFormData(persisted);
+    setIsInitialized(true);
+  }, []);
 
-  const selectedGender = watch('gender');
-  const selectedGoals = watch('primaryGoals');
-  const selectedDietary = watch('dietaryPreferences');
-
-  const onSubmit = async (data: UpsertProfileRequest) => {
-    try {
-      await upsertProfile.mutateAsync(data);
-      router.replace('/(app)');
-    } catch {
-      // handled by mutation
+  // Persist data on change (after initialization)
+  useEffect(() => {
+    if (isInitialized) {
+      persistData(formData);
     }
+  }, [formData, isInitialized]);
+
+  const updateField = <K extends keyof OnboardingData>(
+    field: K,
+    value: OnboardingData[K],
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    // Clear error for this field when user edits
+    if (errors[field as keyof ValidationErrors]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const toggleGoal = (goal: string) => {
+    setFormData((prev) => {
+      const current = prev.primaryGoals;
+      if (current.includes(goal)) {
+        return { ...prev, primaryGoals: current.filter((g) => g !== goal) };
+      }
+      if (current.length < 2) {
+        return { ...prev, primaryGoals: [...current, goal] };
+      }
+      return prev;
+    });
+  };
+
+  const toggleDietary = (option: string) => {
+    setFormData((prev) => {
+      const current = prev.dietaryPreferences;
+      if (current.includes(option)) {
+        return {
+          ...prev,
+          dietaryPreferences: current.filter((d) => d !== option),
+        };
+      }
+      return { ...prev, dietaryPreferences: [...current, option] };
+    });
   };
 
   const nextStep = () => {
     if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
+      setCurrentStep((s) => s + 1);
     }
   };
 
   const prevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+      setCurrentStep((s) => s - 1);
     }
   };
 
-  const toggleGoal = (goal: string) => {
-    const current = selectedGoals ?? [];
-    if (current.includes(goal)) {
-      setValue(
-        'primaryGoals',
-        current.filter((g: string) => g !== goal),
-      );
-    } else if (current.length < 2) {
-      setValue('primaryGoals', [...current, goal]);
+  const handleSubmit = async () => {
+    const validationErrors = validate(formData);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
     }
-  };
 
-  const toggleDietary = (option: string) => {
-    const current = selectedDietary ?? [];
-    if (current.includes(option)) {
-      setValue(
-        'dietaryPreferences',
-        current.filter((d: string) => d !== option),
-      );
-    } else {
-      setValue('dietaryPreferences', [...current, option]);
+    try {
+      const request = toApiRequest(formData);
+      await upsertProfile.mutateAsync(request);
+      clearPersistedData();
+      router.replace('/(app)');
+    } catch {
+      // Error handled by mutation
     }
   };
 
   const serverError = upsertProfile.error?.message ?? null;
+  const isPending = upsertProfile.isPending;
 
   const renderStep = () => {
     switch (currentStep) {
@@ -256,27 +302,20 @@ export default function OnboardingScreen() {
               <Text fontSize="$5" fontWeight="bold">
                 Age
               </Text>
-              <Controller
-                control={control}
-                name="age"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <YStack gap="$1">
-                    <Input
-                      placeholder="e.g. 25"
-                      value={value}
-                      onChangeText={onChange}
-                      onBlur={onBlur}
-                      keyboardType="numeric"
-                      disabled={upsertProfile.isPending}
-                    />
-                    {errors.age && (
-                      <Text color="$red10" fontSize="$2">
-                        {errors.age.message}
-                      </Text>
-                    )}
-                  </YStack>
+              <YStack gap="$1">
+                <Input
+                  placeholder="e.g. 25"
+                  value={formData.age}
+                  onChangeText={(v) => updateField('age', v)}
+                  keyboardType="numeric"
+                  disabled={isPending}
+                />
+                {errors.age && (
+                  <Text color="$red10" fontSize="$2">
+                    {errors.age}
+                  </Text>
                 )}
-              />
+              </YStack>
             </YStack>
 
             <YStack gap="$2">
@@ -289,10 +328,10 @@ export default function OnboardingScreen() {
                     key={g}
                     size="$3"
                     onPress={() =>
-                      setValue('gender', selectedGender === g ? '' : g)
+                      updateField('gender', formData.gender === g ? '' : g)
                     }
-                    opacity={selectedGender === g ? 1 : 0.5}
-                    disabled={upsertProfile.isPending}
+                    opacity={formData.gender === g ? 1 : 0.5}
+                    disabled={isPending}
                   >
                     {genderLabels[g]}
                   </Button>
@@ -311,46 +350,32 @@ export default function OnboardingScreen() {
               </Text>
               <YStack gap="$1">
                 <XStack gap="$2" alignItems="center">
-                  <Controller
-                    control={control}
-                    name="heightFeet"
-                    render={({ field: { onChange, onBlur, value } }) => (
-                      <XStack flex={1} gap="$1" alignItems="center">
-                        <Input
-                          flex={1}
-                          placeholder="5"
-                          value={value}
-                          onChangeText={onChange}
-                          onBlur={onBlur}
-                          keyboardType="numeric"
-                          disabled={upsertProfile.isPending}
-                        />
-                        <Text>ft</Text>
-                      </XStack>
-                    )}
-                  />
-                  <Controller
-                    control={control}
-                    name="heightInches"
-                    render={({ field: { onChange, onBlur, value } }) => (
-                      <XStack flex={1} gap="$1" alignItems="center">
-                        <Input
-                          flex={1}
-                          placeholder="9"
-                          value={value}
-                          onChangeText={onChange}
-                          onBlur={onBlur}
-                          keyboardType="numeric"
-                          disabled={upsertProfile.isPending}
-                        />
-                        <Text>in</Text>
-                      </XStack>
-                    )}
-                  />
+                  <XStack flex={1} gap="$1" alignItems="center">
+                    <Input
+                      flex={1}
+                      placeholder="5"
+                      value={formData.heightFeet}
+                      onChangeText={(v) => updateField('heightFeet', v)}
+                      keyboardType="numeric"
+                      disabled={isPending}
+                    />
+                    <Text>ft</Text>
+                  </XStack>
+                  <XStack flex={1} gap="$1" alignItems="center">
+                    <Input
+                      flex={1}
+                      placeholder="9"
+                      value={formData.heightInches}
+                      onChangeText={(v) => updateField('heightInches', v)}
+                      keyboardType="numeric"
+                      disabled={isPending}
+                    />
+                    <Text>in</Text>
+                  </XStack>
                 </XStack>
                 {(errors.heightFeet || errors.heightInches) && (
                   <Text color="$red10" fontSize="$2">
-                    {errors.heightFeet?.message || errors.heightInches?.message}
+                    {errors.heightFeet || errors.heightInches}
                   </Text>
                 )}
               </YStack>
@@ -360,27 +385,20 @@ export default function OnboardingScreen() {
               <Text fontSize="$5" fontWeight="bold">
                 Current Weight (lbs)
               </Text>
-              <Controller
-                control={control}
-                name="weight"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <YStack gap="$1">
-                    <Input
-                      placeholder="e.g. 154"
-                      value={value}
-                      onChangeText={onChange}
-                      onBlur={onBlur}
-                      keyboardType="decimal-pad"
-                      disabled={upsertProfile.isPending}
-                    />
-                    {errors.weight && (
-                      <Text color="$red10" fontSize="$2">
-                        {errors.weight.message}
-                      </Text>
-                    )}
-                  </YStack>
+              <YStack gap="$1">
+                <Input
+                  placeholder="e.g. 154"
+                  value={formData.weight}
+                  onChangeText={(v) => updateField('weight', v)}
+                  keyboardType="decimal-pad"
+                  disabled={isPending}
+                />
+                {errors.weight && (
+                  <Text color="$red10" fontSize="$2">
+                    {errors.weight}
+                  </Text>
                 )}
-              />
+              </YStack>
             </YStack>
           </YStack>
         );
@@ -396,50 +414,39 @@ export default function OnboardingScreen() {
                 Select up to 2
               </Text>
               <XStack gap="$2" flexWrap="wrap">
-                {primaryGoals.map((goal) => (
+                {primaryGoalOptions.map((goal) => (
                   <Button
                     key={goal}
                     size="$3"
                     onPress={() => toggleGoal(goal)}
-                    opacity={(selectedGoals ?? []).includes(goal) ? 1 : 0.5}
-                    disabled={upsertProfile.isPending}
+                    opacity={formData.primaryGoals.includes(goal) ? 1 : 0.5}
+                    disabled={isPending}
                   >
                     {goal}
                   </Button>
                 ))}
               </XStack>
-              {errors.primaryGoals && (
-                <Text color="$red10" fontSize="$2">
-                  {errors.primaryGoals.message}
-                </Text>
-              )}
             </YStack>
 
             <YStack gap="$2">
               <Text fontSize="$5" fontWeight="bold">
                 Dietary Preferences
               </Text>
-              <Controller
-                control={control}
-                name="dietaryPreferences"
-                render={() => (
-                  <XStack gap="$2" flexWrap="wrap">
-                    {dietaryOptions.map((option) => (
-                      <Button
-                        key={option}
-                        size="$3"
-                        onPress={() => toggleDietary(option)}
-                        opacity={
-                          (selectedDietary ?? []).includes(option) ? 1 : 0.5
-                        }
-                        disabled={upsertProfile.isPending}
-                      >
-                        {option}
-                      </Button>
-                    ))}
-                  </XStack>
-                )}
-              />
+              <XStack gap="$2" flexWrap="wrap">
+                {dietaryOptions.map((option) => (
+                  <Button
+                    key={option}
+                    size="$3"
+                    onPress={() => toggleDietary(option)}
+                    opacity={
+                      formData.dietaryPreferences.includes(option) ? 1 : 0.5
+                    }
+                    disabled={isPending}
+                  >
+                    {option}
+                  </Button>
+                ))}
+              </XStack>
             </YStack>
 
             <YStack gap="$2">
@@ -449,18 +456,11 @@ export default function OnboardingScreen() {
               <Text fontSize="$2" opacity={0.7}>
                 Optional
               </Text>
-              <Controller
-                control={control}
-                name="allergies"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    placeholder="e.g. nuts, soy, lactose"
-                    value={value}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    disabled={upsertProfile.isPending}
-                  />
-                )}
+              <Input
+                placeholder="e.g. nuts, soy, lactose"
+                value={formData.allergies}
+                onChangeText={(v) => updateField('allergies', v)}
+                disabled={isPending}
               />
             </YStack>
           </YStack>
@@ -476,21 +476,14 @@ export default function OnboardingScreen() {
               <Text fontSize="$2" opacity={0.7}>
                 Optional - you can skip this
               </Text>
-              <Controller
-                control={control}
-                name="healthChallenge"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    placeholder="Tell us about your main health challenge..."
-                    value={value}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    multiline
-                    numberOfLines={4}
-                    textAlignVertical="top"
-                    disabled={upsertProfile.isPending}
-                  />
-                )}
+              <Input
+                placeholder="Tell us about your main health challenge..."
+                value={formData.healthChallenge}
+                onChangeText={(v) => updateField('healthChallenge', v)}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+                disabled={isPending}
               />
             </YStack>
           </YStack>
@@ -546,47 +539,16 @@ export default function OnboardingScreen() {
             <Text color="$red10" fontWeight="bold">
               Please fix the following:
             </Text>
-            {errors.age && (
-              <Text color="$red10">
-                • Age: {errors.age.message || 'Invalid age'}
-              </Text>
-            )}
-            {errors.gender && (
-              <Text color="$red10">• Select your biological sex</Text>
-            )}
-            {errors.heightCm && (
-              <Text color="$red10">
-                • Height: {errors.heightCm.message || 'Invalid height'}
-              </Text>
+            {errors.age && <Text color="$red10">• Age: {errors.age}</Text>}
+            {errors.weight && (
+              <Text color="$red10">• Weight: {errors.weight}</Text>
             )}
             {errors.heightFeet && (
-              <Text color="$red10">
-                • Height (feet):{' '}
-                {errors.heightFeet.message || 'Invalid feet value'}
-              </Text>
+              <Text color="$red10">• Height (feet): {errors.heightFeet}</Text>
             )}
             {errors.heightInches && (
               <Text color="$red10">
-                • Height (inches):{' '}
-                {errors.heightInches.message || 'Invalid inches value'}
-              </Text>
-            )}
-            {errors.weight && (
-              <Text color="$red10">
-                • Weight: {errors.weight.message || 'Invalid weight'}
-              </Text>
-            )}
-            {errors.primaryGoals && (
-              <Text color="$red10">
-                •{' '}
-                {errors.primaryGoals.message ||
-                  'Select at least 1 primary goal'}
-              </Text>
-            )}
-            {errors.dietaryPreferences && (
-              <Text color="$red10">
-                • Dietary preferences:{' '}
-                {errors.dietaryPreferences.message || 'Invalid selection'}
+                • Height (inches): {errors.heightInches}
               </Text>
             )}
           </YStack>
@@ -596,27 +558,18 @@ export default function OnboardingScreen() {
 
         <XStack gap="$2" justifyContent="space-between">
           {currentStep > 1 && (
-            <Button
-              variant="outlined"
-              onPress={prevStep}
-              disabled={upsertProfile.isPending}
-            >
+            <Button variant="outlined" onPress={prevStep} disabled={isPending}>
               Previous
             </Button>
           )}
           <YStack flex={1} />
           {currentStep < totalSteps ? (
-            <Button onPress={nextStep} disabled={upsertProfile.isPending}>
+            <Button onPress={nextStep} disabled={isPending}>
               Next
             </Button>
           ) : (
-            <Button
-              onPress={handleSubmit(
-                onSubmit as unknown as SubmitHandler<FormInput>,
-              )}
-              disabled={upsertProfile.isPending}
-            >
-              {upsertProfile.isPending ? (
+            <Button onPress={handleSubmit} disabled={isPending}>
+              {isPending ? (
                 <XStack gap="$2" alignItems="center">
                   <Spinner size="small" />
                   <Text>Saving...</Text>
