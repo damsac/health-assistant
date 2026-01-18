@@ -1,72 +1,25 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-  Animated,
-  FlatList,
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  RefreshControl,
   ScrollView,
+  UIManager,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MessageContent, type MessagePart, Sidebar } from '@/components/chat';
 import { Button, Spinner, Text, XStack, YStack } from '@/components/ui';
 import { Input } from '@/components/ui/Input';
 import { useChat } from '@/lib/hooks/use-chat';
-import {
-  useConversations,
-  useDeleteConversation,
-} from '@/lib/hooks/use-conversations';
 import { useProfile } from '@/lib/hooks/use-profile';
 
-const SIDEBAR_WIDTH = 280;
-
-function formatDate(date: Date | string): string {
-  const d = new Date(date);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) {
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  }
-  if (diffDays === 1) {
-    return 'Yesterday';
-  }
-  if (diffDays < 7) {
-    return d.toLocaleDateString([], { weekday: 'long' });
-  }
-  return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
-}
-
-function MessageBubble({
-  role,
-  content,
-}: {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-}) {
-  const isUser = role === 'user';
-
-  return (
-    <XStack
-      justifyContent={isUser ? 'flex-end' : 'flex-start'}
-      paddingHorizontal="$3"
-      marginVertical="$1"
-    >
-      <YStack
-        backgroundColor={isUser ? '$blue9' : '$color4'}
-        paddingHorizontal="$3"
-        paddingVertical="$2"
-        borderRadius="$4"
-        maxWidth="80%"
-      >
-        <Text color={isUser ? 'white' : '$color12'} fontSize="$3">
-          {content}
-        </Text>
-      </YStack>
-    </XStack>
-  );
+// Enable layout animation on Android
+if (
+  Platform.OS === 'android' &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
 function ProfileCompletionPrompt({ onDismiss }: { onDismiss: () => void }) {
@@ -86,7 +39,7 @@ function ProfileCompletionPrompt({ onDismiss }: { onDismiss: () => void }) {
         borderLeftColor="$yellow9"
       >
         <XStack gap="$2" alignItems="flex-start">
-          <Text fontSize="$3">💡</Text>
+          <Text fontSize="$3">TIP</Text>
           <YStack flex={1} gap="$1">
             <Text color="$yellow12" fontSize="$3" fontWeight="500">
               Tip: Complete your profile
@@ -108,231 +61,57 @@ function ProfileCompletionPrompt({ onDismiss }: { onDismiss: () => void }) {
   );
 }
 
-type ConversationItemProps = {
-  id: string;
-  title: string | null;
-  updatedAt: Date | string;
-  isActive: boolean;
-  onPress: () => void;
-  onDelete: () => void;
-  isDeleting: boolean;
-};
+const SUGGESTED_PROMPTS = [
+  { text: 'How did I sleep this week?', icon: '🌙' },
+  { text: 'Help me set a new goal', icon: '🎯' },
+  { text: 'What should I eat today?', icon: '🥗' },
+  { text: 'Review my progress', icon: '📊' },
+];
 
-function ConversationItem({
-  title,
-  updatedAt,
-  isActive,
-  onPress,
-  onDelete,
-  isDeleting,
-}: ConversationItemProps) {
+function SuggestedPrompts({
+  onSelectPrompt,
+}: {
+  onSelectPrompt: (text: string) => void;
+}) {
   return (
-    <Pressable onPress={onPress} disabled={isDeleting}>
-      {({ pressed }) => (
-        <XStack
-          paddingHorizontal="$3"
-          paddingVertical="$3"
-          backgroundColor={
-            isActive ? '$color4' : pressed ? '$color3' : 'transparent'
-          }
-          borderBottomWidth={1}
-          borderBottomColor="$borderColor"
-          alignItems="center"
-          gap="$2"
-          opacity={isDeleting ? 0.5 : 1}
+    <YStack flex={1} justifyContent="center" alignItems="center" gap="$4">
+      <YStack alignItems="center" gap="$2">
+        <Text color="$color10" fontSize="$4">
+          Start a conversation
+        </Text>
+        <Text
+          color="$color9"
+          fontSize="$2"
+          textAlign="center"
+          paddingHorizontal="$6"
         >
-          <YStack flex={1} gap="$1">
-            <Text
-              fontSize="$3"
-              fontWeight={isActive ? '600' : '400'}
-              numberOfLines={1}
-            >
-              {title || 'New conversation'}
-            </Text>
-            <Text fontSize="$1" color="$color10">
-              {formatDate(updatedAt)}
-            </Text>
-          </YStack>
+          Ask me anything about health, nutrition, or wellness.
+        </Text>
+      </YStack>
+      <YStack gap="$2" paddingHorizontal="$4" width="100%" maxWidth={400}>
+        {SUGGESTED_PROMPTS.map((prompt) => (
           <Pressable
-            onPress={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            hitSlop={8}
-            disabled={isDeleting}
+            key={prompt.text}
+            onPress={() => onSelectPrompt(prompt.text)}
           >
-            <Text color="$red10" fontSize="$2">
-              {isDeleting ? '...' : '×'}
-            </Text>
-          </Pressable>
-        </XStack>
-      )}
-    </Pressable>
-  );
-}
-
-type SidebarProps = {
-  isOpen: boolean;
-  onClose: () => void;
-  currentConversationId: string | undefined;
-  onSelectConversation: (id: string) => void;
-  onNewChat: () => void;
-  insets: { top: number; bottom: number };
-};
-
-function Sidebar({
-  isOpen,
-  onClose,
-  currentConversationId,
-  onSelectConversation,
-  onNewChat,
-  insets,
-}: SidebarProps) {
-  const slideAnim = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
-  const overlayAnim = useRef(new Animated.Value(0)).current;
-
-  const {
-    data: conversations,
-    isLoading,
-    refetch,
-    isRefetching,
-  } = useConversations();
-  const deleteConversation = useDeleteConversation();
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(slideAnim, {
-        toValue: isOpen ? 0 : -SIDEBAR_WIDTH,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-      Animated.timing(overlayAnim, {
-        toValue: isOpen ? 1 : 0,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [isOpen, slideAnim, overlayAnim]);
-
-  const handleSelectConversation = (id: string) => {
-    onSelectConversation(id);
-    onClose();
-  };
-
-  const handleNewChat = () => {
-    onNewChat();
-    onClose();
-  };
-
-  const handleDeleteConversation = (id: string) => {
-    deleteConversation.mutate(id, {
-      onSuccess: () => {
-        // If we deleted the current conversation, start a new chat
-        if (id === currentConversationId) {
-          onNewChat();
-        }
-      },
-    });
-  };
-
-  return (
-    <>
-      {/* Overlay */}
-      <Animated.View
-        pointerEvents={isOpen ? 'auto' : 'none'}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.3)',
-          opacity: overlayAnim,
-          zIndex: 10,
-        }}
-      >
-        <Pressable style={{ flex: 1 }} onPress={onClose} />
-      </Animated.View>
-
-      {/* Sidebar */}
-      <Animated.View
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          bottom: 0,
-          width: SIDEBAR_WIDTH,
-          backgroundColor: '#fff',
-          borderRightWidth: 1,
-          borderRightColor: '#e0e0e0',
-          transform: [{ translateX: slideAnim }],
-          zIndex: 20,
-          paddingTop: insets.top,
-        }}
-      >
-        <YStack flex={1}>
-          {/* Sidebar Header */}
-          <XStack
-            paddingHorizontal="$3"
-            paddingVertical="$3"
-            borderBottomWidth={1}
-            borderBottomColor="$borderColor"
-            alignItems="center"
-            justifyContent="space-between"
-          >
-            <Text fontSize="$4" fontWeight="600">
-              History
-            </Text>
-            <Pressable onPress={handleNewChat} hitSlop={8}>
-              <Text color="$blue10" fontSize="$3" fontWeight="500">
-                + New
-              </Text>
-            </Pressable>
-          </XStack>
-
-          {/* Conversations List */}
-          {isLoading ? (
-            <YStack flex={1} justifyContent="center" alignItems="center">
-              <Spinner size="small" color="$color10" />
-            </YStack>
-          ) : conversations?.length === 0 ? (
-            <YStack
-              flex={1}
-              justifyContent="center"
+            <XStack
+              backgroundColor="$color2"
+              padding="$3"
+              borderRadius="$4"
+              gap="$3"
               alignItems="center"
-              padding="$4"
+              borderWidth={1}
+              borderColor="$borderColor"
             >
-              <Text color="$color10" fontSize="$3" textAlign="center">
-                No conversations yet
+              <Text fontSize="$5">{prompt.icon}</Text>
+              <Text fontSize="$3" color="$color11" flex={1}>
+                {prompt.text}
               </Text>
-            </YStack>
-          ) : (
-            <FlatList
-              data={conversations}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <ConversationItem
-                  id={item.id}
-                  title={item.title}
-                  updatedAt={item.updatedAt}
-                  isActive={item.id === currentConversationId}
-                  onPress={() => handleSelectConversation(item.id)}
-                  onDelete={() => handleDeleteConversation(item.id)}
-                  isDeleting={
-                    deleteConversation.isPending &&
-                    deleteConversation.variables === item.id
-                  }
-                />
-              )}
-              refreshControl={
-                <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
-              }
-              contentContainerStyle={{ paddingBottom: insets.bottom }}
-            />
-          )}
-        </YStack>
-      </Animated.View>
-    </>
+            </XStack>
+          </Pressable>
+        ))}
+      </YStack>
+    </YStack>
   );
 }
 
@@ -360,6 +139,7 @@ export default function ChatScreen() {
     conversationTitle,
     getMessageText,
     setMessages,
+    addToolApprovalResponse,
   } = useChat({
     existingConversationId: activeConversationId,
     onConversationCreated: (newId) => {
@@ -367,6 +147,15 @@ export default function ChatScreen() {
       router.setParams({ conversationId: newId });
     },
   });
+
+  // Handlers for tool approval flow
+  const handleApprove = (approvalId: string) => {
+    addToolApprovalResponse({ id: approvalId, approved: true });
+  };
+
+  const handleReject = (approvalId: string) => {
+    addToolApprovalResponse({ id: approvalId, approved: false });
+  };
 
   // Sync with URL params
   useEffect(() => {
@@ -377,6 +166,14 @@ export default function ChatScreen() {
 
   const title = conversationTitle || 'New Chat';
   const isLoading = status === 'submitted' || status === 'streaming';
+
+  // Log errors to console for debugging.
+  // TODO: remove this and add better error handling.
+  useEffect(() => {
+    if (error) {
+      console.error('[Chat Error]', error);
+    }
+  }, [error]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -427,6 +224,10 @@ export default function ChatScreen() {
     setMessages([]);
   };
 
+  const handleSelectPrompt = (text: string) => {
+    setInputValue(text);
+  };
+
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
@@ -461,7 +262,7 @@ export default function ChatScreen() {
           gap="$3"
         >
           <Pressable onPress={toggleSidebar} hitSlop={8}>
-            <Text fontSize="$5">☰</Text>
+            <Text fontSize="$5">HIST</Text>
           </Pressable>
           <YStack flex={1}>
             <Text fontSize="$4" fontWeight="500" numberOfLines={1}>
@@ -488,32 +289,25 @@ export default function ChatScreen() {
           }
         >
           {messages.length === 0 ? (
-            <YStack
-              flex={1}
-              justifyContent="center"
-              alignItems="center"
-              gap="$2"
-            >
-              <Text color="$color10" fontSize="$4">
-                Start a conversation
-              </Text>
-              <Text
-                color="$color9"
-                fontSize="$2"
-                textAlign="center"
-                paddingHorizontal="$6"
-              >
-                Ask me anything about health, nutrition, or wellness.
-              </Text>
-            </YStack>
+            <SuggestedPrompts onSelectPrompt={handleSelectPrompt} />
           ) : (
-            messages.map((message) => (
-              <MessageBubble
-                key={message.id}
-                role={message.role as 'user' | 'assistant' | 'system'}
-                content={getMessageText(message.parts)}
-              />
-            ))
+            messages.map((message, index) => {
+              const isLastMessage = index === messages.length - 1;
+              const isAssistantStreaming =
+                isLastMessage && isLoading && message.role === 'assistant';
+
+              return (
+                <MessageContent
+                  key={message.id}
+                  role={message.role as 'user' | 'assistant' | 'system'}
+                  parts={(message.parts ?? []) as MessagePart[]}
+                  getMessageText={getMessageText}
+                  isStreaming={isAssistantStreaming}
+                  onApprove={handleApprove}
+                  onReject={handleReject}
+                />
+              );
+            })
           )}
 
           {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
@@ -554,7 +348,7 @@ export default function ChatScreen() {
         <XStack
           paddingHorizontal="$3"
           paddingVertical="$2"
-          paddingBottom={insets.bottom + 8}
+          paddingBottom={8}
           borderTopWidth={1}
           borderTopColor="$borderColor"
           gap="$2"

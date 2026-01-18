@@ -1,5 +1,5 @@
-import { convertToModelMessages, streamText, type UIMessage } from 'ai';
-import { eq } from 'drizzle-orm';
+import type { UIMessage } from 'ai';
+import { desc, eq } from 'drizzle-orm';
 import { Hono } from 'hono';
 import {
   type ConversationResponse,
@@ -7,12 +7,11 @@ import {
   createConversationSchema,
   getTextFromParts,
 } from '../../lib/api/conversation';
-import { db, userProfile } from '../../lib/db';
-import {
-  healthConsultantAgent,
-  type UserProfileContext,
-} from '../agents/health-consultant';
+import { db, userGoal, userProfile } from '../../lib/db';
+import { getActionTools } from '../actions';
+import type { UserProfileContext } from '../agents/health-consultant';
 import { type AuthEnv, authMiddleware } from '../middleware/auth';
+import { invokeAgent } from '../services/agent';
 import { conversationService } from '../services/conversation';
 import { getLatestHealthData } from '../services/health-data';
 
@@ -125,6 +124,13 @@ chat.post('/', async (c) => {
     where: eq(userProfile.userId, session.user.id),
   });
 
+  // Fetch user goals for context
+  const goals = await db
+    .select()
+    .from(userGoal)
+    .where(eq(userGoal.userId, session.user.id))
+    .orderBy(desc(userGoal.createdAt));
+
   // Fetch latest health data from Garmin
   const healthData = await getLatestHealthData(session.user.id);
 
@@ -152,27 +158,34 @@ chat.post('/', async (c) => {
     exerciseTypes: profile?.exerciseTypes,
     waterIntakeLiters: profile?.waterIntakeLiters,
     garminConnected: profile?.garminConnected,
+    goals,
   };
 
-  // Convert UIMessage format to model message format
-  const modelMessages = await convertToModelMessages(body.messages);
+  // Get action tools bound to user context
+  const tools = getActionTools({
+    userId: session.user.id,
+    conversationId,
+  });
 
-  const result = streamText({
-    model: healthConsultantAgent.model,
-    system: healthConsultantAgent.getSystemPrompt(profileContext),
-    messages: modelMessages,
-    async onFinish({ text }) {
-      // Save assistant response
-      await conversationService.addMessage({
-        conversationId,
-        role: 'assistant',
-        parts: [{ type: 'text', text }],
-      });
+  // Invoke the agent
+  const result = await invokeAgent({
+    messages: body.messages,
+    profileContext,
+    tools,
+    onFinish: async ({ text }) => {
+      // Save assistant response (only if there's text content)
+      if (text) {
+        await conversationService.addMessage({
+          conversationId,
+          role: 'assistant',
+          parts: [{ type: 'text', text }],
+        });
+      }
     },
   });
 
-  // Include conversationId in response headers for client to track
-  const response = result.toTextStreamResponse();
+  // Use UI message stream response to include tool results
+  const response = result.toUIMessageStreamResponse();
   response.headers.set('X-Conversation-Id', conversationId);
 
   return response;

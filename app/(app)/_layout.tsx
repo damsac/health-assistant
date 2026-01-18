@@ -1,7 +1,6 @@
 import { Redirect, Stack, useSegments } from 'expo-router';
 import { Suspense } from 'react';
-import { YStack } from 'tamagui';
-import { LoadingState, TabBar } from '@/components/ui';
+import { LoadingState } from '@/components/ui';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useProfile } from '@/lib/hooks/use-profile';
 
@@ -23,24 +22,18 @@ function ProfileAwareStack() {
   }
 
   if (profile && isOnOnboarding) {
-    return <Redirect href="/(app)" />;
+    return <Redirect href="/(app)/(tabs)" as any />;
   }
 
-  const showTabBar = !isOnOnboarding;
-
   return (
-    <YStack flex={1}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="onboarding" />
-        <Stack.Screen name="chat" />
-        <Stack.Screen name="health-stats" />
-        <Stack.Screen name="edit-profile" />
-        <Stack.Screen name="garmin" />
-        <Stack.Screen name="(profile)" />
-      </Stack>
-      {showTabBar && <TabBar />}
-    </YStack>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="onboarding" />
+      <Stack.Screen name="edit-profile" />
+      <Stack.Screen name="(profile)" />
+      <Stack.Screen name="garmin" />
+      <Stack.Screen name="health-stats" />
+    </Stack>
   );
 }
 

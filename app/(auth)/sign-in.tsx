@@ -39,7 +39,7 @@ export default function SignInScreen() {
   const onSubmit = async (data: SignInFormData) => {
     try {
       await signIn.mutateAsync({ email: data.email, password: data.password });
-      router.replace('/(app)');
+      router.replace('/(app)/(tabs)');
     } catch {
       // Error is handled by mutation state
     }

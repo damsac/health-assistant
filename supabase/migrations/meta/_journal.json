@@ -15,6 +15,20 @@
       "when": 1768539764729,
       "tag": "0001_abnormal_eternity",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1768545887407,
+      "tag": "0002_brave_wong",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1768678815728,
+      "tag": "0003_sour_arachne",
+      "breakpoints": true
     }
   ]
 }

@@ -52,7 +52,7 @@ export default function SignUpScreen() {
         password: data.password,
         name: data.name,
       });
-      router.replace('/(app)');
+      router.replace('/(app)/(tabs)');
     } catch {
       // Error is handled by mutation state
     }
