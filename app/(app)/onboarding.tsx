@@ -209,29 +209,42 @@ export default function OnboardingScreen() {
   const [isInitialized, setIsInitialized] = useState(false);
 
   const totalSteps = 4;
+  const isMetric = measurementSystem === 'metric';
 
-  // Load persisted data on mount
-  useEffect(() => {
-    const persisted = loadPersistedData();
-    setFormData(persisted);
-    setIsInitialized(true);
-  }, []);
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<FormInput>({
+    resolver: zodResolver(
+      createFormSchema(isMetric, measurementSystem),
+    ) as unknown as Resolver<FormInput>,
+    defaultValues: {
+      age: '',
+      heightCm: '',
+      heightFeet: '',
+      heightInches: '',
+      weight: '',
+      gender: '',
+      primaryGoals: [],
+      dietaryPreferences: [],
+      allergies: '',
+      healthChallenge: '',
+    },
+  });
 
-  // Persist data on change (after initialization)
-  useEffect(() => {
-    if (isInitialized) {
-      persistData(formData);
-    }
-  }, [formData, isInitialized]);
+  const selectedGender = watch('gender');
+  const selectedGoals = watch('primaryGoals');
+  const selectedDietary = watch('dietaryPreferences');
 
-  const updateField = <K extends keyof OnboardingData>(
-    field: K,
-    value: OnboardingData[K],
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error for this field when user edits
-    if (errors[field as keyof ValidationErrors]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
+  const onSubmit = async (data: UpsertProfileRequest) => {
+    try {
+      await upsertProfile.mutateAsync(data);
+      router.replace('/(app)/(tabs)');
+    } catch {
+      // handled by mutation
     }
   };
 

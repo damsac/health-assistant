@@ -35,4 +35,11 @@ export const queryKeys = {
     detail: (id: string) =>
       [...queryKeys.conversations.all, 'detail', id] as const,
   },
+  goals: {
+    all: ['goals'] as const,
+  },
+  dailyLog: {
+    all: ['dailyLog'] as const,
+    today: ['dailyLog', 'today'] as const,
+  },
 } as const;
