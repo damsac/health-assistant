@@ -11,14 +11,14 @@ function LoadingScreen() {
 function ProfileAwareStack() {
   const { data: profile, isLoading } = useProfile();
   const segments = useSegments();
-  const isOnOnboarding = segments.includes('onboarding' as never);
+  const isOnOnboarding = segments.includes('(onboarding)' as never);
 
   if (isLoading) {
     return <LoadingScreen />;
   }
 
   if (!profile && !isOnOnboarding) {
-    return <Redirect href="/(app)/onboarding" />;
+    return <Redirect href="/(app)/(onboarding)" />;
   }
 
   if (profile && isOnOnboarding) {
@@ -28,7 +28,7 @@ function ProfileAwareStack() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="onboarding" />
+      <Stack.Screen name="(onboarding)" />
       <Stack.Screen name="edit-profile" />
       <Stack.Screen name="(profile)" />
       <Stack.Screen name="garmin" />
