@@ -39,7 +39,7 @@ function ProfileCompletionPrompt({ onDismiss }: { onDismiss: () => void }) {
         borderLeftColor="$yellow9"
       >
         <XStack gap="$2" alignItems="flex-start">
-          <Text fontSize="$3">💡</Text>
+          <Text fontSize="$3">TIP</Text>
           <YStack flex={1} gap="$1">
             <Text color="$yellow12" fontSize="$3" fontWeight="500">
               Tip: Complete your profile
@@ -58,6 +58,60 @@ function ProfileCompletionPrompt({ onDismiss }: { onDismiss: () => void }) {
         </XStack>
       </YStack>
     </XStack>
+  );
+}
+
+const SUGGESTED_PROMPTS = [
+  { text: 'How did I sleep this week?', icon: '🌙' },
+  { text: 'Help me set a new goal', icon: '🎯' },
+  { text: 'What should I eat today?', icon: '🥗' },
+  { text: 'Review my progress', icon: '📊' },
+];
+
+function SuggestedPrompts({
+  onSelectPrompt,
+}: {
+  onSelectPrompt: (text: string) => void;
+}) {
+  return (
+    <YStack flex={1} justifyContent="center" alignItems="center" gap="$4">
+      <YStack alignItems="center" gap="$2">
+        <Text color="$color10" fontSize="$4">
+          Start a conversation
+        </Text>
+        <Text
+          color="$color9"
+          fontSize="$2"
+          textAlign="center"
+          paddingHorizontal="$6"
+        >
+          Ask me anything about health, nutrition, or wellness.
+        </Text>
+      </YStack>
+      <YStack gap="$2" paddingHorizontal="$4" width="100%" maxWidth={400}>
+        {SUGGESTED_PROMPTS.map((prompt) => (
+          <Pressable
+            key={prompt.text}
+            onPress={() => onSelectPrompt(prompt.text)}
+          >
+            <XStack
+              backgroundColor="$color2"
+              padding="$3"
+              borderRadius="$4"
+              gap="$3"
+              alignItems="center"
+              borderWidth={1}
+              borderColor="$borderColor"
+            >
+              <Text fontSize="$5">{prompt.icon}</Text>
+              <Text fontSize="$3" color="$color11" flex={1}>
+                {prompt.text}
+              </Text>
+            </XStack>
+          </Pressable>
+        ))}
+      </YStack>
+    </YStack>
   );
 }
 
@@ -170,6 +224,10 @@ export default function ChatScreen() {
     setMessages([]);
   };
 
+  const handleSelectPrompt = (text: string) => {
+    setInputValue(text);
+  };
+
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
@@ -204,7 +262,7 @@ export default function ChatScreen() {
           gap="$3"
         >
           <Pressable onPress={toggleSidebar} hitSlop={8}>
-            <Text fontSize="$5">☰</Text>
+            <Text fontSize="$5">HIST</Text>
           </Pressable>
           <YStack flex={1}>
             <Text fontSize="$4" fontWeight="500" numberOfLines={1}>
@@ -231,24 +289,7 @@ export default function ChatScreen() {
           }
         >
           {messages.length === 0 ? (
-            <YStack
-              flex={1}
-              justifyContent="center"
-              alignItems="center"
-              gap="$2"
-            >
-              <Text color="$color10" fontSize="$4">
-                Start a conversation
-              </Text>
-              <Text
-                color="$color9"
-                fontSize="$2"
-                textAlign="center"
-                paddingHorizontal="$6"
-              >
-                Ask me anything about health, nutrition, or wellness.
-              </Text>
-            </YStack>
+            <SuggestedPrompts onSelectPrompt={handleSelectPrompt} />
           ) : (
             messages.map((message, index) => {
               const isLastMessage = index === messages.length - 1;
@@ -307,7 +348,7 @@ export default function ChatScreen() {
         <XStack
           paddingHorizontal="$3"
           paddingVertical="$2"
-          paddingBottom={insets.bottom + 8}
+          paddingBottom={8}
           borderTopWidth={1}
           borderTopColor="$borderColor"
           gap="$2"

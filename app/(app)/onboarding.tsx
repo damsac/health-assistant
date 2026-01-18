@@ -203,7 +203,7 @@ export default function OnboardingScreen() {
   const onSubmit = async (data: UpsertProfileRequest) => {
     try {
       await upsertProfile.mutateAsync(data);
-      router.replace('/(app)');
+      router.replace('/(app)/(tabs)');
     } catch {
       // handled by mutation
     }

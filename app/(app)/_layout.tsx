@@ -34,14 +34,17 @@ function ProfileAwareStack() {
   }
 
   if (profile && isOnOnboarding) {
-    return <Redirect href="/(app)" />;
+    return <Redirect href="/(app)/(tabs)" />;
   }
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
+      <Stack.Screen name="(tabs)" />
       <Stack.Screen name="onboarding" />
-      <Stack.Screen name="chat" />
+      <Stack.Screen name="edit-profile" />
+      <Stack.Screen name="(profile)" />
+      <Stack.Screen name="garmin" />
+      <Stack.Screen name="health-stats" />
     </Stack>
   );
 }
