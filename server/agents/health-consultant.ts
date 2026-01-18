@@ -1,11 +1,19 @@
 import { anthropic } from '@ai-sdk/anthropic';
-import type { Gender } from '@/lib/db/schema';
+import type { Gender, GoalStatus } from '@/lib/db/schema';
 
 /**
  * Health Consultant Agent Configuration
  *
  * This module defines the AI agent's behavior, model selection, and system prompt.
  */
+
+export type UserGoal = {
+  id: string;
+  title: string;
+  description: string | null;
+  status: GoalStatus;
+  createdAt: Date;
+};
 
 export type HealthMetrics = {
   steps?: number;
@@ -49,6 +57,7 @@ export type UserProfileContext = {
   exerciseTypes?: string[] | null;
   waterIntakeLiters?: string | null;
   garminConnected?: boolean | null;
+  goals?: UserGoal[];
 };
 
 const calculateAge = (dateOfBirth: Date): number => {
@@ -269,6 +278,35 @@ const formatHealthData = (healthData?: HealthMetrics): string => {
     : '';
 };
 
+const formatGoalsContext = (goals?: UserGoal[]): string => {
+  if (!goals || goals.length === 0) return '';
+
+  const activeGoals = goals.filter((g) => g.status === 'active');
+  const completedGoals = goals.filter((g) => g.status === 'completed');
+
+  const parts: string[] = [];
+
+  if (activeGoals.length > 0) {
+    const activeList = activeGoals
+      .map((g) => {
+        const desc = g.description ? ` - ${g.description}` : '';
+        return `- ${g.title}${desc}`;
+      })
+      .join('\n');
+    parts.push(`Active Goals:\n${activeList}`);
+  }
+
+  if (completedGoals.length > 0) {
+    const completedList = completedGoals
+      .slice(0, 3)
+      .map((g) => `- ${g.title}`)
+      .join('\n');
+    parts.push(`Recently Completed:\n${completedList}`);
+  }
+
+  return parts.length > 0 ? `\n\nUSER GOALS:\n${parts.join('\n\n')}` : '';
+};
+
 export const healthConsultantAgent = {
   model: anthropic('claude-3-haiku-20240307'),
 
@@ -278,8 +316,9 @@ export const healthConsultantAgent = {
   getSystemPrompt: (context: UserProfileContext) => {
     const profileSection = formatProfileContext(context);
     const healthDataSection = formatHealthData(context.healthData);
+    const goalsSection = formatGoalsContext(context.goals);
 
-    return `You are a holistic nutrition consultant providing personalized, evidence-based guidance.${profileSection}${healthDataSection}
+    return `You are a holistic nutrition consultant providing personalized, evidence-based guidance.${profileSection}${healthDataSection}${goalsSection}
 
 Your approach:
 - View health through a holistic lens — what we eat, how we move, how we think, how we sleep, and how we manage stress are all deeply connected
@@ -299,6 +338,17 @@ Boundaries:
 - Always recommend consulting healthcare professionals for medical concerns or symptoms
 - Never diagnose conditions or prescribe treatments
 - Provide evidence-informed guidance while acknowledging that nutrition science evolves
-- Use the user's preferred measurement system when discussing measurements`.trim();
+- Use the user's preferred measurement system when discussing measurements
+
+Goal integration (when user has goals):
+- Reference active goals naturally when giving advice
+- Connect recommendations to specific goals
+- Periodically check on progress without being pushy
+- Celebrate small wins and acknowledge effort
+- Suggest marking goals as completed when appropriate
+
+Goal discovery (when no goals):
+- If user discusses health aspirations, offer to help set a goal
+- Keep it light — don't push goal-setting aggressively`.trim();
   },
 } as const;

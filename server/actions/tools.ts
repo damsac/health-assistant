@@ -1,3 +1,4 @@
+import { createDailyLogTool } from './daily-log/log-daily-entry';
 import { createGoalsTool } from './goals/manage-goals';
 import { createProfileUpdateTool } from './user-profile/update-user-profile';
 
@@ -16,6 +17,7 @@ export function getActionTools(context: ToolExecutionContext) {
   return {
     proposeProfileUpdate: createProfileUpdateTool(context),
     manageGoals: createGoalsTool(context),
+    logDailyEntry: createDailyLogTool(context),
   } as const;
 }
 
