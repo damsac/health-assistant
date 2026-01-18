@@ -1,5 +1,5 @@
 import type { UIMessage } from 'ai';
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { Hono } from 'hono';
 import {
   type ConversationResponse,
@@ -7,7 +7,7 @@ import {
   createConversationSchema,
   getTextFromParts,
 } from '../../lib/api/conversation';
-import { db, userProfile } from '../../lib/db';
+import { db, userGoal, userProfile } from '../../lib/db';
 import { getActionTools } from '../actions';
 import type { UserProfileContext } from '../agents/health-consultant';
 import { type AuthEnv, authMiddleware } from '../middleware/auth';
@@ -124,6 +124,13 @@ chat.post('/', async (c) => {
     where: eq(userProfile.userId, session.user.id),
   });
 
+  // Fetch user goals for context
+  const goals = await db
+    .select()
+    .from(userGoal)
+    .where(eq(userGoal.userId, session.user.id))
+    .orderBy(desc(userGoal.createdAt));
+
   // Fetch latest health data from Garmin
   const healthData = await getLatestHealthData(session.user.id);
 
@@ -151,6 +158,7 @@ chat.post('/', async (c) => {
     exerciseTypes: profile?.exerciseTypes,
     waterIntakeLiters: profile?.waterIntakeLiters,
     garminConnected: profile?.garminConnected,
+    goals,
   };
 
   // Get action tools bound to user context
