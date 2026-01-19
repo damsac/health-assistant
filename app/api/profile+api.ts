@@ -4,53 +4,57 @@ import { errorResponse, json, parseBody, withAuth } from '@/lib/api-middleware';
 import { db, userProfile } from '@/lib/db';
 import { calculateProfileCompletion } from '@/lib/profile-utils';
 
-export const GET = withAuth(async (_request, session) => {
-  const profile = await db.query.userProfile.findFirst({
-    where: eq(userProfile.userId, session.user.id),
-  });
+export async function GET(request: Request) {
+  return withAuth(async (_request, session) => {
+    const profile = await db.query.userProfile.findFirst({
+      where: eq(userProfile.userId, session.user.id),
+    });
 
-  if (!profile) {
-    return errorResponse('Profile not found', 404);
-  }
+    if (!profile) {
+      return errorResponse('Profile not found', 404);
+    }
 
-  // Compute completion percentage from actual fields
-  const profileCompletionPercentage = calculateProfileCompletion(profile);
+    // Compute completion percentage from actual fields
+    const profileCompletionPercentage = calculateProfileCompletion(profile);
 
-  return json<ProfileResponse>({
-    ...profile,
-    profileCompletionPercentage,
-  });
-});
+    return json<ProfileResponse>({
+      ...profile,
+      profileCompletionPercentage,
+    });
+  })(request);
+}
 
-export const PUT = withAuth(async (request, session) => {
-  const parsed = await parseBody(request, upsertProfileSchema);
+export async function PUT(request: Request) {
+  return withAuth(async (request, session) => {
+    const parsed = await parseBody(request, upsertProfileSchema);
 
-  if (!parsed.success) {
-    return parsed.error;
-  }
+    if (!parsed.success) {
+      return parsed.error;
+    }
 
-  const updateData = {
-    ...parsed.data,
-    updatedAt: new Date(),
-  };
-
-  const [profile] = await db
-    .insert(userProfile)
-    .values({
-      userId: session.user.id,
+    const updateData = {
       ...parsed.data,
-    })
-    .onConflictDoUpdate({
-      target: userProfile.userId,
-      set: updateData,
-    })
-    .returning();
+      updatedAt: new Date(),
+    };
 
-  // Compute completion percentage from actual fields
-  const profileCompletionPercentage = calculateProfileCompletion(profile);
+    const [profile] = await db
+      .insert(userProfile)
+      .values({
+        userId: session.user.id,
+        ...parsed.data,
+      })
+      .onConflictDoUpdate({
+        target: userProfile.userId,
+        set: updateData,
+      })
+      .returning();
 
-  return json<ProfileResponse>({
-    ...profile,
-    profileCompletionPercentage,
-  });
-});
+    // Compute completion percentage from actual fields
+    const profileCompletionPercentage = calculateProfileCompletion(profile);
+
+    return json<ProfileResponse>({
+      ...profile,
+      profileCompletionPercentage,
+    });
+  })(request);
+}

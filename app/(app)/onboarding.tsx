@@ -209,42 +209,33 @@ export default function OnboardingScreen() {
   const [isInitialized, setIsInitialized] = useState(false);
 
   const totalSteps = 4;
-  const isMetric = measurementSystem === 'metric';
 
-  const {
-    control,
-    handleSubmit,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useForm<FormInput>({
-    resolver: zodResolver(
-      createFormSchema(isMetric, measurementSystem),
-    ) as unknown as Resolver<FormInput>,
-    defaultValues: {
-      age: '',
-      heightCm: '',
-      heightFeet: '',
-      heightInches: '',
-      weight: '',
-      gender: '',
-      primaryGoals: [],
-      dietaryPreferences: [],
-      allergies: '',
-      healthChallenge: '',
-    },
-  });
+  // Load persisted data on mount
+  useEffect(() => {
+    const persisted = loadPersistedData();
+    setFormData(persisted);
+    setIsInitialized(true);
+  }, []);
 
-  const selectedGender = watch('gender');
-  const selectedGoals = watch('primaryGoals');
-  const selectedDietary = watch('dietaryPreferences');
+  // Persist data on change
+  useEffect(() => {
+    if (isInitialized) {
+      persistData(formData);
+    }
+  }, [formData, isInitialized]);
 
-  const onSubmit = async (data: UpsertProfileRequest) => {
-    try {
-      await upsertProfile.mutateAsync(data);
-      router.replace('/(app)/(tabs)');
-    } catch {
-      // handled by mutation
+  const updateField = <K extends keyof OnboardingData>(
+    field: K,
+    value: OnboardingData[K],
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    // Clear error for this field
+    if (field in errors) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field as keyof ValidationErrors];
+        return next;
+      });
     }
   };
 
@@ -297,7 +288,7 @@ export default function OnboardingScreen() {
       const request = toApiRequest(formData);
       await upsertProfile.mutateAsync(request);
       clearPersistedData();
-      router.replace('/(app)');
+      router.replace('/(app)/(tabs)' as any);
     } catch {
       // Error handled by mutation
     }

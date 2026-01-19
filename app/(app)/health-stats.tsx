@@ -7,14 +7,17 @@
  * - Connection status
  */
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { ScrollView } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Button,
   Card,
-  H1,
+  ErrorState,
   H2,
+  LoadingState,
+  ScreenHeader,
   Spinner,
+  SuccessMessage,
   Text,
   XStack,
   YStack,
@@ -27,11 +30,15 @@ import {
 } from '@/lib/hooks/use-garmin';
 
 export default function HealthStatsPage() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  const { data: connection, isLoading: connectionLoading } =
-    useGarminConnection();
+  const {
+    data: connection,
+    isLoading: connectionLoading,
+    error: connectionError,
+    refetch: refetchConnection,
+  } = useGarminConnection();
   const { data: latestMetrics, isLoading: metricsLoading } = useGarminMetrics();
   const disconnectMutation = useDisconnectGarmin();
   const syncMutation = useSyncGarmin();
@@ -51,7 +58,7 @@ export default function HealthStatsPage() {
   const handleRefresh = async () => {
     try {
       await syncMutation.mutateAsync();
-      alert('Garmin data refreshed successfully!');
+      setShowSuccess(true);
     } catch (error) {
       alert(
         error instanceof Error
@@ -104,134 +111,140 @@ export default function HealthStatsPage() {
   };
 
   if (connectionLoading) {
+    return <LoadingState message="Loading health stats..." />;
+  }
+
+  if (connectionError) {
     return (
-      <YStack flex={1} justifyContent="center" alignItems="center">
-        <Spinner size="large" />
-      </YStack>
+      <ErrorState
+        message="Failed to load Garmin connection"
+        onRetry={refetchConnection}
+      />
     );
   }
 
   if (!connection?.connected) {
     return (
-      <ScrollView
-        contentContainerStyle={{
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom + 20,
-          paddingHorizontal: 16,
-        }}
-      >
-        <YStack gap="$4" paddingVertical="$4">
-          <H1>Health Stats</H1>
-          <Card padding="$4">
-            <YStack gap="$3">
-              <Text>No Garmin account connected.</Text>
-              <Button onPress={() => router.push('/garmin')}>
-                Connect Garmin
-              </Button>
-            </YStack>
-          </Card>
-        </YStack>
-      </ScrollView>
+      <YStack flex={1} backgroundColor="$background">
+        <ScreenHeader title="Health Stats" showBack={false} />
+        <ScrollView style={{ flex: 1 }}>
+          <YStack gap="$4" paddingHorizontal="$4" paddingVertical="$4">
+            <Card padding="$4">
+              <YStack gap="$3">
+                <Text>No Garmin account connected.</Text>
+                <Button onPress={() => router.push('/garmin')}>
+                  Connect Garmin
+                </Button>
+              </YStack>
+            </Card>
+          </YStack>
+        </ScrollView>
+      </YStack>
     );
   }
 
   return (
-    <ScrollView
-      contentContainerStyle={{
-        paddingTop: insets.top,
-        paddingBottom: insets.bottom + 20,
-        paddingHorizontal: 16,
-      }}
-    >
-      <YStack gap="$4" paddingVertical="$4">
-        <H1>Health Stats</H1>
-
-        <Card padding="$4">
-          <YStack gap="$3">
-            <XStack justifyContent="space-between" alignItems="center">
-              <YStack>
-                <Text fontWeight="bold">Connected Account</Text>
-                <Text opacity={0.7}>{connection.email}</Text>
-              </YStack>
-              <XStack gap="$2">
-                <Button
-                  size="$3"
-                  theme="green"
-                  onPress={handleRefresh}
-                  disabled={syncMutation.isPending}
-                >
-                  {syncMutation.isPending ? (
-                    <Spinner size="small" />
-                  ) : (
-                    'Refresh'
-                  )}
-                </Button>
-                <Button
-                  size="$3"
-                  theme="red"
-                  onPress={handleDisconnect}
-                  disabled={disconnectMutation.isPending}
-                >
-                  {disconnectMutation.isPending
-                    ? 'Disconnecting...'
-                    : 'Disconnect'}
-                </Button>
+    <YStack flex={1} backgroundColor="$background">
+      <ScreenHeader title="Health Stats" showBack={false} />
+      <SuccessMessage
+        message="Garmin data refreshed successfully!"
+        visible={showSuccess}
+        onDismiss={() => setShowSuccess(false)}
+      />
+      <ScrollView style={{ flex: 1 }}>
+        <YStack gap="$4" paddingHorizontal="$4" paddingVertical="$4">
+          <Card padding="$4">
+            <YStack gap="$3">
+              <XStack justifyContent="space-between" alignItems="center">
+                <YStack>
+                  <Text fontWeight="bold">Connected Account</Text>
+                  <Text opacity={0.7}>{connection.email}</Text>
+                </YStack>
+                <XStack gap="$2">
+                  <Button
+                    size="$3"
+                    theme="green"
+                    onPress={handleRefresh}
+                    disabled={syncMutation.isPending}
+                  >
+                    {syncMutation.isPending ? (
+                      <Spinner size="small" />
+                    ) : (
+                      'Refresh'
+                    )}
+                  </Button>
+                  <Button
+                    size="$3"
+                    theme="red"
+                    onPress={handleDisconnect}
+                    disabled={disconnectMutation.isPending}
+                  >
+                    {disconnectMutation.isPending
+                      ? 'Disconnecting...'
+                      : 'Disconnect'}
+                  </Button>
+                </XStack>
               </XStack>
-            </XStack>
 
-            {connection.lastSync && (
-              <Text fontSize="$2" opacity={0.7}>
-                Last Sync: {formatDate(connection.lastSync)}
+              {connection.lastSync && (
+                <Text fontSize="$2" opacity={0.7}>
+                  Last Sync: {formatDate(connection.lastSync)}
+                </Text>
+              )}
+            </YStack>
+          </Card>
+
+          <H2>Latest Health Data</H2>
+
+          {metricsLoading ? (
+            <Card padding="$4">
+              <XStack justifyContent="center">
+                <Spinner />
+              </XStack>
+            </Card>
+          ) : latestMetrics && Object.keys(latestMetrics).length > 0 ? (
+            <YStack gap="$3">
+              {Object.entries(latestMetrics)
+                .filter(([type]) => type !== 'heart_rate_detailed')
+                .map(([type, metric]) => (
+                  <Card key={metric.id} padding="$3">
+                    <XStack justifyContent="space-between" alignItems="center">
+                      <YStack>
+                        <Text fontWeight="bold" textTransform="capitalize">
+                          {type === 'activity'
+                            ? 'Latest Activity'
+                            : type.replace(/_/g, ' ')}
+                        </Text>
+                        <Text fontSize="$2" opacity={0.7}>
+                          {formatDate(metric.recordedAt)}
+                        </Text>
+                      </YStack>
+                      <Text fontSize="$6" fontWeight="bold">
+                        {formatMetricValue(metric.value, metric.unit, type)}
+                      </Text>
+                    </XStack>
+                  </Card>
+                ))}
+
+              <Text
+                fontSize="$2"
+                opacity={0.7}
+                textAlign="center"
+                marginTop="$2"
+              >
+                💡 Calories are shown within activity data
               </Text>
-            )}
-          </YStack>
-        </Card>
-
-        <H2>Latest Health Data</H2>
-
-        {metricsLoading ? (
-          <Card padding="$4">
-            <XStack justifyContent="center">
-              <Spinner />
-            </XStack>
-          </Card>
-        ) : latestMetrics && Object.keys(latestMetrics).length > 0 ? (
-          <YStack gap="$3">
-            {Object.entries(latestMetrics)
-              .filter(([type]) => type !== 'heart_rate_detailed')
-              .map(([type, metric]) => (
-                <Card key={metric.id} padding="$3">
-                  <XStack justifyContent="space-between" alignItems="center">
-                    <YStack>
-                      <Text fontWeight="bold" textTransform="capitalize">
-                        {type === 'activity'
-                          ? 'Latest Activity'
-                          : type.replace(/_/g, ' ')}
-                      </Text>
-                      <Text fontSize="$2" opacity={0.7}>
-                        {formatDate(metric.recordedAt)}
-                      </Text>
-                    </YStack>
-                    <Text fontSize="$6" fontWeight="bold">
-                      {formatMetricValue(metric.value, metric.unit, type)}
-                    </Text>
-                  </XStack>
-                </Card>
-              ))}
-
-            <Text fontSize="$2" opacity={0.7} textAlign="center" marginTop="$2">
-              💡 Calories are shown within activity data
-            </Text>
-          </YStack>
-        ) : (
-          <Card padding="$4">
-            <Text textAlign="center" opacity={0.7}>
-              No health data synced yet. Click "Refresh" to sync your latest
-              data.
-            </Text>
-          </Card>
-        )}
-      </YStack>
-    </ScrollView>
+            </YStack>
+          ) : (
+            <Card padding="$4">
+              <Text textAlign="center" opacity={0.7}>
+                No health data synced yet. Click "Refresh" to sync your latest
+                data.
+              </Text>
+            </Card>
+          )}
+        </YStack>
+      </ScrollView>
+    </YStack>
   );
 }

@@ -1,23 +1,11 @@
 import { Redirect, Stack, useSegments } from 'expo-router';
 import { Suspense } from 'react';
-import { Spinner, Text, YStack } from 'tamagui';
+import { LoadingState } from '@/components/ui';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useProfile } from '@/lib/hooks/use-profile';
 
 function LoadingScreen() {
-  return (
-    <YStack
-      flex={1}
-      justifyContent="center"
-      alignItems="center"
-      backgroundColor="$background"
-    >
-      <Spinner size="large" color="$blue10" />
-      <Text marginTop="$4" color="$color11">
-        Loading...
-      </Text>
-    </YStack>
-  );
+  return <LoadingState />;
 }
 
 function ProfileAwareStack() {
