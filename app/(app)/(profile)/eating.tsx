@@ -1,3 +1,11 @@
+/**
+ * Eating Schedule Screen
+ *
+ * Allows users to input their eating habits including meals per day,
+ * typical meal times, snacking habits, and water intake. This information
+ * is used to provide personalized nutrition and energy recommendations.
+ */
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -5,6 +13,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
+import { TimePicker } from '@/components/TimePicker';
 import { Button, Input, Spinner, Text, XStack, YStack } from '@/components/ui';
 import { useProfile, useUpsertProfile } from '@/lib/hooks/use-profile';
 
@@ -45,10 +54,7 @@ export default function EatingScheduleScreen() {
     },
   });
 
-  // Using direct array management instead of useFieldArray for now
   const mealTimes = watch('typicalMealTimes') || [];
-
-  const _waterIntake = watch('waterIntakeLiters');
 
   // Adjust meal times array when meals per day changes
   const handleMealsChange = (value: number) => {
@@ -154,30 +160,26 @@ export default function EatingScheduleScreen() {
           </YStack>
 
           {/* Typical Meal Times */}
-          <YStack gap="$2">
-            <Text fontSize="$4" fontWeight="600">
-              Typical Meal Times
-            </Text>
-            <Text fontSize="$2" color="gray">
-              When do you usually eat?
-            </Text>
+          <YStack gap="$3">
+            <YStack gap="$1">
+              <Text fontSize="$4" fontWeight="600">
+                Typical Meal Times
+              </Text>
+              <Text fontSize="$2" color="gray">
+                When do you usually eat?
+              </Text>
+            </YStack>
             {mealTimes.map((_time, index) => (
               <Controller
                 key={`meal-time-${index}-${_time}`}
                 control={control}
                 name={`typicalMealTimes.${index}`}
                 render={({ field: { onChange, value } }) => (
-                  <XStack gap="$2" alignItems="center">
-                    <Text fontSize="$3" minWidth={60}>
-                      Meal {index + 1}:
-                    </Text>
-                    <Input
-                      flex={1}
-                      value={value}
-                      onChangeText={onChange}
-                      placeholder="08:00"
-                    />
-                  </XStack>
+                  <TimePicker
+                    label={`Meal ${index + 1}`}
+                    value={value}
+                    onChange={onChange}
+                  />
                 )}
               />
             ))}
