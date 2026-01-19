@@ -1,20 +1,19 @@
 /**
  * Onboarding Screen
  * Multi-step form for collecting user's basic health profile information.
- * Uses simple React state with localStorage persistence.
+ * Uses OnboardingContext for in-memory state management.
  */
 
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Input, Spinner, Text, XStack, YStack } from '@/components/ui';
 import { PROFILE_BOUNDS, type UpsertProfileRequest } from '@/lib/api/profile';
+import { useOnboarding } from '@/lib/contexts/onboarding-context';
 import { type Gender, genderEnum } from '@/lib/db/schema';
 import { useUpsertProfile } from '@/lib/hooks/use-profile';
 import { feetInchesToCm, kgToGrams, lbsToKg } from '@/lib/units';
-
-const STORAGE_KEY = 'onboarding_form';
 
 const genderLabels: Record<Gender, string> = {
   male: 'Male',
@@ -44,7 +43,7 @@ const dietaryOptions = [
   'None',
 ] as const;
 
-interface OnboardingData {
+type OnboardingData = {
   age: string;
   gender: Gender | '';
   heightFeet: string;
@@ -54,60 +53,14 @@ interface OnboardingData {
   dietaryPreferences: string[];
   allergies: string;
   healthChallenge: string;
-}
-
-const defaultData: OnboardingData = {
-  age: '',
-  gender: '',
-  heightFeet: '',
-  heightInches: '',
-  weight: '',
-  primaryGoals: [],
-  dietaryPreferences: [],
-  allergies: '',
-  healthChallenge: '',
 };
 
-function loadPersistedData(): OnboardingData {
-  try {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        return { ...defaultData, ...JSON.parse(stored) };
-      }
-    }
-  } catch {
-    // Ignore parse errors
-  }
-  return defaultData;
-}
-
-function persistData(data: OnboardingData) {
-  try {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    }
-  } catch {
-    // Ignore storage errors
-  }
-}
-
-function clearPersistedData() {
-  try {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(STORAGE_KEY);
-    }
-  } catch {
-    // Ignore storage errors
-  }
-}
-
-interface ValidationErrors {
+type ValidationErrors = {
   age?: string;
   weight?: string;
   heightFeet?: string;
   heightInches?: string;
-}
+};
 
 function validate(data: OnboardingData): ValidationErrors {
   const errors: ValidationErrors = {};
@@ -116,7 +69,7 @@ function validate(data: OnboardingData): ValidationErrors {
   if (data.age) {
     const age = parseInt(data.age, 10);
     if (
-      isNaN(age) ||
+      Number.isNaN(age) ||
       age < PROFILE_BOUNDS.age.min ||
       age > PROFILE_BOUNDS.age.max
     ) {
@@ -130,7 +83,7 @@ function validate(data: OnboardingData): ValidationErrors {
   } else {
     const weight = parseFloat(data.weight);
     if (
-      isNaN(weight) ||
+      Number.isNaN(weight) ||
       weight < PROFILE_BOUNDS.weightLbs.min ||
       weight > PROFILE_BOUNDS.weightLbs.max
     ) {
@@ -141,13 +94,13 @@ function validate(data: OnboardingData): ValidationErrors {
   // Height validation (optional but if provided, must be valid)
   if (data.heightFeet) {
     const feet = parseInt(data.heightFeet, 10);
-    if (isNaN(feet) || feet < 0 || feet > 9) {
+    if (Number.isNaN(feet) || feet < 0 || feet > 9) {
       errors.heightFeet = 'Feet must be 0-9';
     }
   }
   if (data.heightInches) {
     const inches = parseInt(data.heightInches, 10);
-    if (isNaN(inches) || inches < 0 || inches >= 12) {
+    if (Number.isNaN(inches) || inches < 0 || inches >= 12) {
       errors.heightInches = 'Inches must be 0-11';
     }
   }
@@ -176,7 +129,7 @@ function toApiRequest(data: OnboardingData): UpsertProfileRequest {
   let dateOfBirth: string | null = null;
   if (data.age) {
     const age = parseInt(data.age, 10);
-    if (!isNaN(age)) {
+    if (!Number.isNaN(age)) {
       dateOfBirth = new Date(
         new Date().getFullYear() - age,
         0,
@@ -202,34 +155,25 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const upsertProfile = useUpsertProfile();
+  const {
+    data: formData,
+    updateField,
+    toggleGoal,
+    toggleDietary,
+    reset,
+  } = useOnboarding();
 
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<OnboardingData>(defaultData);
   const [errors, setErrors] = useState<ValidationErrors>({});
-  const [isInitialized, setIsInitialized] = useState(false);
 
   const totalSteps = 4;
 
-  // Load persisted data on mount
-  useEffect(() => {
-    const persisted = loadPersistedData();
-    setFormData(persisted);
-    setIsInitialized(true);
-  }, []);
-
-  // Persist data on change
-  useEffect(() => {
-    if (isInitialized) {
-      persistData(formData);
-    }
-  }, [formData, isInitialized]);
-
-  const updateField = <K extends keyof OnboardingData>(
+  const handleUpdateField = <K extends keyof OnboardingData>(
     field: K,
     value: OnboardingData[K],
   ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error for this field
+    updateField(field, value);
+    // Clear error for this field when user updates it
     if (field in errors) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -237,32 +181,6 @@ export default function OnboardingScreen() {
         return next;
       });
     }
-  };
-
-  const toggleGoal = (goal: string) => {
-    setFormData((prev) => {
-      const current = prev.primaryGoals;
-      if (current.includes(goal)) {
-        return { ...prev, primaryGoals: current.filter((g) => g !== goal) };
-      }
-      if (current.length < 2) {
-        return { ...prev, primaryGoals: [...current, goal] };
-      }
-      return prev;
-    });
-  };
-
-  const toggleDietary = (option: string) => {
-    setFormData((prev) => {
-      const current = prev.dietaryPreferences;
-      if (current.includes(option)) {
-        return {
-          ...prev,
-          dietaryPreferences: current.filter((d) => d !== option),
-        };
-      }
-      return { ...prev, dietaryPreferences: [...current, option] };
-    });
   };
 
   const nextStep = () => {
@@ -287,8 +205,8 @@ export default function OnboardingScreen() {
     try {
       const request = toApiRequest(formData);
       await upsertProfile.mutateAsync(request);
-      clearPersistedData();
-      router.replace('/(app)/(tabs)' as any);
+      reset();
+      router.replace('/(app)/(tabs)');
     } catch {
       // Error handled by mutation
     }
@@ -310,7 +228,7 @@ export default function OnboardingScreen() {
                 <Input
                   placeholder="e.g. 25"
                   value={formData.age}
-                  onChangeText={(v) => updateField('age', v)}
+                  onChangeText={(v) => handleUpdateField('age', v)}
                   keyboardType="numeric"
                   disabled={isPending}
                 />
@@ -332,7 +250,10 @@ export default function OnboardingScreen() {
                     key={g}
                     size="$3"
                     onPress={() =>
-                      updateField('gender', formData.gender === g ? '' : g)
+                      handleUpdateField(
+                        'gender',
+                        formData.gender === g ? '' : g,
+                      )
                     }
                     opacity={formData.gender === g ? 1 : 0.5}
                     disabled={isPending}
@@ -359,7 +280,7 @@ export default function OnboardingScreen() {
                       flex={1}
                       placeholder="5"
                       value={formData.heightFeet}
-                      onChangeText={(v) => updateField('heightFeet', v)}
+                      onChangeText={(v) => handleUpdateField('heightFeet', v)}
                       keyboardType="numeric"
                       disabled={isPending}
                     />
@@ -370,7 +291,7 @@ export default function OnboardingScreen() {
                       flex={1}
                       placeholder="9"
                       value={formData.heightInches}
-                      onChangeText={(v) => updateField('heightInches', v)}
+                      onChangeText={(v) => handleUpdateField('heightInches', v)}
                       keyboardType="numeric"
                       disabled={isPending}
                     />
@@ -393,7 +314,7 @@ export default function OnboardingScreen() {
                 <Input
                   placeholder="e.g. 154"
                   value={formData.weight}
-                  onChangeText={(v) => updateField('weight', v)}
+                  onChangeText={(v) => handleUpdateField('weight', v)}
                   keyboardType="decimal-pad"
                   disabled={isPending}
                 />
@@ -463,7 +384,7 @@ export default function OnboardingScreen() {
               <Input
                 placeholder="e.g. nuts, soy, lactose"
                 value={formData.allergies}
-                onChangeText={(v) => updateField('allergies', v)}
+                onChangeText={(v) => handleUpdateField('allergies', v)}
                 disabled={isPending}
               />
             </YStack>
@@ -483,7 +404,7 @@ export default function OnboardingScreen() {
               <Input
                 placeholder="Tell us about your main health challenge..."
                 value={formData.healthChallenge}
-                onChangeText={(v) => updateField('healthChallenge', v)}
+                onChangeText={(v) => handleUpdateField('healthChallenge', v)}
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"

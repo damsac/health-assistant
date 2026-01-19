@@ -98,19 +98,23 @@ export function MealLogger() {
               style={{ flex: 1, minWidth: 70 }}
             >
               <YStack
-                backgroundColor={isSelected ? '$orange4' : '$orange2'}
+                backgroundColor={
+                  (isSelected ? '$orange4' : '$orange2') as '$background'
+                }
                 padding="$3"
                 borderRadius="$3"
                 alignItems="center"
                 gap="$1"
                 borderWidth={isSelected ? 2 : 1}
-                borderColor={isSelected ? '$orange9' : '$orange6'}
+                borderColor={
+                  (isSelected ? '$orange9' : '$orange6') as '$borderColor'
+                }
                 opacity={createLog.isPending ? 0.5 : 1}
               >
                 <Text fontSize={18}>{meal.icon}</Text>
                 <Text
                   fontSize="$2"
-                  color="$orange11"
+                  color={'$orange11' as '$color'}
                   fontWeight={isSelected ? '600' : '400'}
                 >
                   {meal.label}
@@ -137,7 +141,7 @@ export function MealLogger() {
           <Button
             onPress={handleLogSelectedMeal}
             disabled={createLog.isPending}
-            backgroundColor="$orange9"
+            backgroundColor={'$orange9' as '$background'}
           >
             {createLog.isPending ? (
               <Spinner size="small" color="white" />
@@ -171,7 +175,9 @@ export function MealLogger() {
             <Button
               onPress={handleCustomLog}
               disabled={!customMeal.trim() || createLog.isPending}
-              backgroundColor={customMeal.trim() ? '$orange9' : '$color5'}
+              backgroundColor={
+                (customMeal.trim() ? '$orange9' : '$color5') as '$background'
+              }
               paddingHorizontal="$4"
             >
               {createLog.isPending ? (

@@ -48,3 +48,10 @@ devenv.lock
 
 # direnv
 .direnv/
+.trees/
+
+# Claude Code
+.claude/settings.local.json
+
+# Playwright MCP
+.playwright-mcp/
