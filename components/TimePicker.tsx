@@ -84,15 +84,17 @@ export function TimePicker({ value, onChange, label, error }: TimePickerProps) {
           <Button size="$2" onPress={incrementHours} width={70}>
             ▲
           </Button>
-          <Input
-            value={hours}
-            onChangeText={handleHoursChange}
-            keyboardType="number-pad"
-            maxLength={2}
-            textAlign="center"
-            width={70}
-            paddingHorizontal="$2"
-          />
+          <YStack width={70} alignItems="center">
+            <Input
+              value={hours}
+              onChangeText={handleHoursChange}
+              keyboardType="number-pad"
+              maxLength={2}
+              textAlign="center"
+              width={70}
+              paddingHorizontal="$2"
+            />
+          </YStack>
           <Button size="$2" onPress={decrementHours} width={70}>
             ▼
           </Button>
@@ -106,15 +108,17 @@ export function TimePicker({ value, onChange, label, error }: TimePickerProps) {
           <Button size="$2" onPress={incrementMinutes} width={70}>
             ▲
           </Button>
-          <Input
-            value={minutes}
-            onChangeText={handleMinutesChange}
-            keyboardType="number-pad"
-            maxLength={2}
-            textAlign="center"
-            width={70}
-            paddingHorizontal="$2"
-          />
+          <YStack width={70} alignItems="center">
+            <Input
+              value={minutes}
+              onChangeText={handleMinutesChange}
+              keyboardType="number-pad"
+              maxLength={2}
+              textAlign="center"
+              width={70}
+              paddingHorizontal="$2"
+            />
+          </YStack>
           <Button size="$2" onPress={decrementMinutes} width={70}>
             ▼
           </Button>
