@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Input, Spinner, Text, XStack, YStack } from '@/components/ui';
 import { PROFILE_BOUNDS, type UpsertProfileRequest } from '@/lib/api/profile';
 import { type Gender, genderEnum } from '@/lib/db/schema';
+import { useCreateGoal } from '@/lib/hooks/use-goals';
 import { useUpsertProfile } from '@/lib/hooks/use-profile';
 import { feetInchesToCm, kgToGrams, lbsToKg } from '@/lib/units';
 
@@ -202,6 +203,7 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const upsertProfile = useUpsertProfile();
+  const createGoal = useCreateGoal();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<OnboardingData>(defaultData);
@@ -209,42 +211,30 @@ export default function OnboardingScreen() {
   const [isInitialized, setIsInitialized] = useState(false);
 
   const totalSteps = 4;
-  const isMetric = measurementSystem === 'metric';
 
-  const {
-    control,
-    handleSubmit,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useForm<FormInput>({
-    resolver: zodResolver(
-      createFormSchema(isMetric, measurementSystem),
-    ) as unknown as Resolver<FormInput>,
-    defaultValues: {
-      age: '',
-      heightCm: '',
-      heightFeet: '',
-      heightInches: '',
-      weight: '',
-      gender: '',
-      primaryGoals: [],
-      dietaryPreferences: [],
-      allergies: '',
-      healthChallenge: '',
-    },
-  });
+  useEffect(() => {
+    const persisted = loadPersistedData();
+    setFormData(persisted);
+    setIsInitialized(true);
+  }, []);
 
-  const selectedGender = watch('gender');
-  const selectedGoals = watch('primaryGoals');
-  const selectedDietary = watch('dietaryPreferences');
+  useEffect(() => {
+    if (isInitialized) {
+      persistData(formData);
+    }
+  }, [formData, isInitialized]);
 
-  const onSubmit = async (data: UpsertProfileRequest) => {
-    try {
-      await upsertProfile.mutateAsync(data);
-      router.replace('/(app)/(tabs)');
-    } catch {
-      // handled by mutation
+  const updateField = <K extends keyof OnboardingData>(
+    field: K,
+    value: OnboardingData[K],
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field in errors) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field as keyof ValidationErrors];
+        return next;
+      });
     }
   };
 
@@ -296,8 +286,17 @@ export default function OnboardingScreen() {
     try {
       const request = toApiRequest(formData);
       await upsertProfile.mutateAsync(request);
+
+      // Create goal from health challenge if provided
+      if (formData.healthChallenge && formData.healthChallenge.trim()) {
+        await createGoal.mutateAsync({
+          title: 'Primary Health Challenge',
+          description: formData.healthChallenge,
+        });
+      }
+
       clearPersistedData();
-      router.replace('/(app)');
+      router.replace('/(app)/(tabs)');
     } catch {
       // Error handled by mutation
     }

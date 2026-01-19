@@ -1,10 +1,26 @@
-import { useQuery } from '@tanstack/react-query';
-import type { GoalResponse } from '@/lib/api/goals';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { CreateGoalRequest, GoalResponse } from '@/lib/api/goals';
 import type { ApiError } from '@/lib/api-middleware';
 import { queryKeys } from '@/lib/query-client';
 
 async function fetchGoals(): Promise<GoalResponse[]> {
   const res = await fetch('/api/goals', {
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    const error: ApiError = await res.json();
+    throw new Error(error.error);
+  }
+
+  return res.json();
+}
+
+async function createGoal(data: CreateGoalRequest): Promise<GoalResponse> {
+  const res = await fetch('/api/goals', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
     credentials: 'include',
   });
 
@@ -31,4 +47,15 @@ export function useActiveGoals() {
   const activeGoals = goals?.filter((g) => g.status === 'active') ?? [];
 
   return { data: activeGoals, ...rest };
+}
+
+export function useCreateGoal() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createGoal,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.goals.all });
+    },
+  });
 }
