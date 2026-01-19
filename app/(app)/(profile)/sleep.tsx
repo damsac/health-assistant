@@ -5,6 +5,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
+import { TimePicker } from '@/components/TimePicker';
 import { Button, Input, Spinner, Text, XStack, YStack } from '@/components/ui';
 import { useProfile, useUpsertProfile } from '@/lib/hooks/use-profile';
 
@@ -171,56 +172,32 @@ export default function SleepPatternsScreen() {
           </YStack>
 
           {/* Typical Wake Time */}
-          <YStack gap="$2">
-            <Text fontSize="$4" fontWeight="600">
-              Typical Wake Time
-            </Text>
-            <Controller
-              control={control}
-              name="typicalWakeTime"
-              render={({ field: { onChange, value } }) => (
-                <Input
-                  value={value}
-                  onChangeText={onChange}
-                  placeholder="07:00"
-                />
-              )}
-            />
-            <Text fontSize="$2" color="gray">
-              Format: HH:MM (24-hour)
-            </Text>
-            {errors.typicalWakeTime && (
-              <Text color="red" fontSize="$2">
-                {errors.typicalWakeTime.message}
-              </Text>
+          <Controller
+            control={control}
+            name="typicalWakeTime"
+            render={({ field: { onChange, value } }) => (
+              <TimePicker
+                label="Typical Wake Time"
+                value={value}
+                onChange={onChange}
+                error={errors.typicalWakeTime?.message}
+              />
             )}
-          </YStack>
+          />
 
           {/* Typical Bed Time */}
-          <YStack gap="$2">
-            <Text fontSize="$4" fontWeight="600">
-              Typical Bed Time
-            </Text>
-            <Controller
-              control={control}
-              name="typicalBedTime"
-              render={({ field: { onChange, value } }) => (
-                <Input
-                  value={value}
-                  onChangeText={onChange}
-                  placeholder="23:00"
-                />
-              )}
-            />
-            <Text fontSize="$2" color="gray">
-              Format: HH:MM (24-hour)
-            </Text>
-            {errors.typicalBedTime && (
-              <Text color="red" fontSize="$2">
-                {errors.typicalBedTime.message}
-              </Text>
+          <Controller
+            control={control}
+            name="typicalBedTime"
+            render={({ field: { onChange, value } }) => (
+              <TimePicker
+                label="Typical Bed Time"
+                value={value}
+                onChange={onChange}
+                error={errors.typicalBedTime?.message}
+              />
             )}
-          </YStack>
+          />
         </YStack>
       </YStack>
     </ScrollView>
