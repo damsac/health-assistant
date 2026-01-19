@@ -12,6 +12,7 @@ import { Button, Input, Spinner, Text, XStack, YStack } from '@/components/ui';
 import { PROFILE_BOUNDS, type UpsertProfileRequest } from '@/lib/api/profile';
 import { useOnboarding } from '@/lib/contexts/onboarding-context';
 import { type Gender, genderEnum } from '@/lib/db/schema';
+import { useCreateGoal } from '@/lib/hooks/use-goals';
 import { useUpsertProfile } from '@/lib/hooks/use-profile';
 import { feetInchesToCm, kgToGrams, lbsToKg } from '@/lib/units';
 
@@ -155,6 +156,7 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const upsertProfile = useUpsertProfile();
+  const createGoal = useCreateGoal();
   const {
     data: formData,
     updateField,
@@ -205,6 +207,15 @@ export default function OnboardingScreen() {
     try {
       const request = toApiRequest(formData);
       await upsertProfile.mutateAsync(request);
+
+      // Create goal from health challenge if provided
+      if (formData.healthChallenge && formData.healthChallenge.trim()) {
+        await createGoal.mutateAsync({
+          title: 'Primary Health Challenge',
+          description: formData.healthChallenge,
+        });
+      }
+
       reset();
       router.replace('/(app)/(tabs)');
     } catch {
