@@ -1,3 +1,11 @@
+/**
+ * Eating Schedule Screen
+ *
+ * Allows users to input their eating habits including meals per day,
+ * typical meal times, snacking habits, and water intake. This information
+ * is used to provide personalized nutrition and energy recommendations.
+ */
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -46,10 +54,7 @@ export default function EatingScheduleScreen() {
     },
   });
 
-  // Using direct array management instead of useFieldArray for now
   const mealTimes = watch('typicalMealTimes') || [];
-
-  const _waterIntake = watch('waterIntakeLiters');
 
   // Adjust meal times array when meals per day changes
   const handleMealsChange = (value: number) => {

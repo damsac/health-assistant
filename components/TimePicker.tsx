@@ -1,26 +1,42 @@
+/**
+ * TimePicker Component
+ *
+ * A user-friendly time picker with 12-hour AM/PM format.
+ * Features increment/decrement buttons and direct keyboard input.
+ * Internally converts to 24-hour format for backend storage.
+ */
+
 import { useState } from 'react';
 import { Button, Input, Text, XStack, YStack } from '@/components/ui';
 
 interface TimePickerProps {
-  value: string;
-  onChange: (time: string) => void;
+  value: string; // 24-hour format (HH:MM)
+  onChange: (time: string) => void; // Returns 24-hour format (HH:MM)
   label?: string;
   error?: string;
 }
 
-function convert24To12Hour(hour24: number): { hour12: number; period: 'AM' | 'PM' } {
+/**
+ * Convert 24-hour time to 12-hour format with AM/PM
+ */
+function convert24To12Hour(hour24: number): {
+  hour12: number;
+  period: 'AM' | 'PM';
+} {
   if (hour24 === 0) return { hour12: 12, period: 'AM' };
   if (hour24 < 12) return { hour12: hour24, period: 'AM' };
   if (hour24 === 12) return { hour12: 12, period: 'PM' };
   return { hour12: hour24 - 12, period: 'PM' };
 }
 
+/**
+ * Convert 12-hour time with AM/PM to 24-hour format
+ */
 function convert12To24Hour(hour12: number, period: 'AM' | 'PM'): number {
   if (period === 'AM') {
     return hour12 === 12 ? 0 : hour12;
-  } else {
-    return hour12 === 12 ? 12 : hour12 + 12;
   }
+  return hour12 === 12 ? 12 : hour12 + 12;
 }
 
 export function TimePicker({ value, onChange, label, error }: TimePickerProps) {

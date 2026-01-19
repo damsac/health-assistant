@@ -44,7 +44,6 @@ export default function SleepPatternsScreen() {
   const {
     control,
     handleSubmit,
-    watch,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -57,9 +56,6 @@ export default function SleepPatternsScreen() {
       typicalBedTime: profile?.typicalBedTime || '23:00',
     },
   });
-
-  const _sleepHours = watch('sleepHoursAverage');
-  const _sleepQuality = watch('sleepQuality');
 
   const onSubmit = async (data: FormData) => {
     setIsSaving(true);
