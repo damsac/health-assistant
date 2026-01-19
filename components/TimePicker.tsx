@@ -8,23 +8,43 @@ interface TimePickerProps {
   error?: string;
 }
 
+function convert24To12Hour(hour24: number): { hour12: number; period: 'AM' | 'PM' } {
+  if (hour24 === 0) return { hour12: 12, period: 'AM' };
+  if (hour24 < 12) return { hour12: hour24, period: 'AM' };
+  if (hour24 === 12) return { hour12: 12, period: 'PM' };
+  return { hour12: hour24 - 12, period: 'PM' };
+}
+
+function convert12To24Hour(hour12: number, period: 'AM' | 'PM'): number {
+  if (period === 'AM') {
+    return hour12 === 12 ? 0 : hour12;
+  } else {
+    return hour12 === 12 ? 12 : hour12 + 12;
+  }
+}
+
 export function TimePicker({ value, onChange, label, error }: TimePickerProps) {
-  const [hours, setHours] = useState(() => {
-    const [h] = value.split(':');
-    return h || '07';
-  });
-  const [minutes, setMinutes] = useState(() => {
-    const [, m] = value.split(':');
-    return m || '00';
-  });
+  const [hours24, minutes] = value.split(':').map(v => parseInt(v, 10) || 0);
+  const { hour12: initialHour12, period: initialPeriod } = convert24To12Hour(hours24);
+  
+  const [hours, setHours] = useState(initialHour12.toString().padStart(2, '0'));
+  const [mins, setMins] = useState(minutes.toString().padStart(2, '0'));
+  const [period, setPeriod] = useState<'AM' | 'PM'>(initialPeriod);
+
+  const updateTime = (newHours: string, newMins: string, newPeriod: 'AM' | 'PM') => {
+    const hour12 = parseInt(newHours, 10) || 12;
+    const hour24 = convert12To24Hour(hour12, newPeriod);
+    const formattedHour24 = hour24.toString().padStart(2, '0');
+    onChange(`${formattedHour24}:${newMins}`);
+  };
 
   const handleHoursChange = (text: string) => {
     const num = parseInt(text, 10);
-    if (text === '' || (num >= 0 && num <= 23)) {
+    if (text === '' || (num >= 1 && num <= 12)) {
       const formatted = text === '' ? '' : text.padStart(2, '0');
       setHours(formatted);
-      if (formatted && minutes) {
-        onChange(`${formatted}:${minutes}`);
+      if (formatted && mins) {
+        updateTime(formatted, mins, period);
       }
     }
   };
@@ -33,43 +53,49 @@ export function TimePicker({ value, onChange, label, error }: TimePickerProps) {
     const num = parseInt(text, 10);
     if (text === '' || (num >= 0 && num <= 59)) {
       const formatted = text === '' ? '' : text.padStart(2, '0');
-      setMinutes(formatted);
+      setMins(formatted);
       if (hours && formatted) {
-        onChange(`${hours}:${formatted}`);
+        updateTime(hours, formatted, period);
       }
     }
   };
 
   const incrementHours = () => {
-    const newHours = ((parseInt(hours || '0', 10) + 1) % 24)
-      .toString()
-      .padStart(2, '0');
-    setHours(newHours);
-    onChange(`${newHours}:${minutes}`);
+    let newHour = parseInt(hours || '12', 10) + 1;
+    if (newHour > 12) newHour = 1;
+    const formatted = newHour.toString().padStart(2, '0');
+    setHours(formatted);
+    updateTime(formatted, mins, period);
   };
 
   const decrementHours = () => {
-    const newHours = ((parseInt(hours || '0', 10) - 1 + 24) % 24)
-      .toString()
-      .padStart(2, '0');
-    setHours(newHours);
-    onChange(`${newHours}:${minutes}`);
+    let newHour = parseInt(hours || '12', 10) - 1;
+    if (newHour < 1) newHour = 12;
+    const formatted = newHour.toString().padStart(2, '0');
+    setHours(formatted);
+    updateTime(formatted, mins, period);
   };
 
   const incrementMinutes = () => {
-    const newMinutes = ((parseInt(minutes || '0', 10) + 15) % 60)
+    const newMinutes = ((parseInt(mins || '0', 10) + 15) % 60)
       .toString()
       .padStart(2, '0');
-    setMinutes(newMinutes);
-    onChange(`${hours}:${newMinutes}`);
+    setMins(newMinutes);
+    updateTime(hours, newMinutes, period);
   };
 
   const decrementMinutes = () => {
-    const newMinutes = ((parseInt(minutes || '0', 10) - 15 + 60) % 60)
+    const newMinutes = ((parseInt(mins || '0', 10) - 15 + 60) % 60)
       .toString()
       .padStart(2, '0');
-    setMinutes(newMinutes);
-    onChange(`${hours}:${newMinutes}`);
+    setMins(newMinutes);
+    updateTime(hours, newMinutes, period);
+  };
+
+  const togglePeriod = () => {
+    const newPeriod = period === 'AM' ? 'PM' : 'AM';
+    setPeriod(newPeriod);
+    updateTime(hours, mins, newPeriod);
   };
 
   return (
@@ -110,7 +136,7 @@ export function TimePicker({ value, onChange, label, error }: TimePickerProps) {
           </Button>
           <YStack width={70} alignItems="center">
             <Input
-              value={minutes}
+              value={mins}
               onChangeText={handleMinutesChange}
               keyboardType="number-pad"
               maxLength={2}
@@ -124,13 +150,10 @@ export function TimePicker({ value, onChange, label, error }: TimePickerProps) {
           </Button>
         </YStack>
 
-        <YStack gap="$1" marginLeft="$2">
-          <Text fontSize="$2" color="gray">
-            24-hour
-          </Text>
-          <Text fontSize="$2" color="gray">
-            format
-          </Text>
+        <YStack gap="$2" alignItems="center" minWidth={70}>
+          <Button size="$2" onPress={togglePeriod} width={70}>
+            {period}
+          </Button>
         </YStack>
       </XStack>
       {error && (
